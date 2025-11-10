@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Trading Timer</title>
+<style>
+  body {
+    background-color: #000000;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .timer {
+    display: flex;
+    gap: 12px;
+  }
+
+  .flip-card {
+    position: relative;
+    width: 80px;
+    height: 100px;
+    perspective: 1000px;
+  }
+
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    font-weight: 900;
+    font-size: 55px;
+    line-height: 100px;
+    text-align: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #8a2be2, #4b0082);
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    backface-visibility: hidden;
+    text-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+  }
+
+  .card-face.back {
+    transform: rotateX(180deg);
+  }
+
+  .flip-card.flip .card-face.front {
+    animation: flipFront 0.7s forwards;
+  }
+
+  .flip-card.flip .card-face.back {
+    animation: flipBack 0.7s forwards;
+  }
+
+  @keyframes flipFront {
+    0% { transform: rotateX(0); }
+    100% { transform: rotateX(-180deg); }
+  }
+
+  @keyframes flipBack {
+    0% { transform: rotateX(180deg); }
+    100% { transform: rotateX(0); }
+  }
+
+  .colon {
+    font-size: 60px;
+    font-weight: 900;
+    color: transparent;
+    background: linear-gradient(135deg, #8a2be2, #4b0082);
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+    align-self: center;
+  }
+</style>
+</head>
+<body>
+  <div class="timer">
+    <div class="flip-card" id="hours">
+      <div class="card-face front">00</div>
+      <div class="card-face back">00</div>
+    </div>
+    <div class="colon">:</div>
+    <div class="flip-card" id="minutes">
+      <div class="card-face front">00</div>
+      <div class="card-face back">00</div>
+    </div>
+    <div class="colon">:</div>
+    <div class="flip-card" id="seconds">
+      <div class="card-face front">00</div>
+      <div class="card-face back">00</div>
+    </div>
+  </div>
+
+<script>
+let secondsElapsed = 0;
+
+function pad(num) {
+  return String(num).padStart(2, '0');
+}
+
+function updateFlipCard(card, newValue) {
+  const front = card.querySelector('.front');
+  const back = card.querySelector('.back');
+  const currentValue = front.textContent;
+
+  if (newValue === currentValue) return;
+
+  back.textContent = newValue;
+  card.classList.add('flip');
+
+  setTimeout(() => {
+    front.textContent = newValue;
+    card.classList.remove('flip');
+  }, 700);
+}
+
+function updateTimer() {
+  secondsElapsed++;
+  const hrs = pad(Math.floor(secondsElapsed / 3600) % 24);
+  const mins = pad(Math.floor((secondsElapsed % 3600) / 60));
+  const secs = pad(secondsElapsed % 60);
+
+  updateFlipCard(document.getElementById('hours'), hrs);
+  updateFlipCard(document.getElementById('minutes'), mins);
+  updateFlipCard(document.getElementById('seconds'), secs);
+}
+
+setInterval(updateTimer, 1000);
+</script>
+</body>
+</html>
