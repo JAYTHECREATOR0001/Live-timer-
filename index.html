@@ -6,7 +6,7 @@
 <title>Live Trading Timer</title>
 <style>
   body {
-    background-color: #000000;
+    background-color: transparent;
     height: 100vh;
     display: flex;
     justify-content: center;
@@ -16,14 +16,14 @@
 
   .timer {
     display: flex;
-    gap: 12px;
+    gap: 8px;
   }
 
   .flip-card {
     position: relative;
-    width: 80px;
-    height: 100px;
-    perspective: 1000px;
+    width: 60px;
+    height: 70px;
+    perspective: 800px;
   }
 
   .card-face {
@@ -31,16 +31,16 @@
     width: 100%;
     height: 100%;
     font-weight: 900;
-    font-size: 55px;
-    line-height: 100px;
+    font-size: 40px;
+    line-height: 70px;
     text-align: center;
-    border-radius: 12px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #8a2be2, #4b0082);
     color: transparent;
     -webkit-background-clip: text;
     background-clip: text;
     backface-visibility: hidden;
-    text-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+    text-shadow: 0 0 10px rgba(138, 43, 226, 0.6);
   }
 
   .card-face.back {
@@ -48,11 +48,11 @@
   }
 
   .flip-card.flip .card-face.front {
-    animation: flipFront 0.7s forwards;
+    animation: flipFront 0.6s forwards;
   }
 
   .flip-card.flip .card-face.back {
-    animation: flipBack 0.7s forwards;
+    animation: flipBack 0.6s forwards;
   }
 
   @keyframes flipFront {
@@ -66,13 +66,13 @@
   }
 
   .colon {
-    font-size: 60px;
+    font-size: 45px;
     font-weight: 900;
     color: transparent;
     background: linear-gradient(135deg, #8a2be2, #4b0082);
     -webkit-background-clip: text;
     background-clip: text;
-    text-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+    text-shadow: 0 0 10px rgba(138, 43, 226, 0.6);
     align-self: center;
   }
 </style>
@@ -115,7 +115,7 @@ function updateFlipCard(card, newValue) {
   setTimeout(() => {
     front.textContent = newValue;
     card.classList.remove('flip');
-  }, 700);
+  }, 600);
 }
 
 function updateTimer() {
