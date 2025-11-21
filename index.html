@@ -1,322 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Binance-style Crypto UI</title>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Binance-style Crypto UI — Withdraw Draining</title>
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-  background-color: #0e0f11;
-  color: white;
-}
+  :root{
+    --bg:#0e0f11;
+    --card:#1b1c1f;
+    --muted:#9b9b9b;
+    --yellow:#f5c32c;
+    --green:#1ecb6c;
+  }
+  html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#fff;}
+  .container{max-width:720px;margin:18px auto;padding:20px;}
+  .logo{display:block;margin:0 auto 18px auto;width:110px}
+  .value-section{text-align:center}
+  .value-section .label{opacity:.75;margin-bottom:6px}
+  #balanceAmount{font-size:36px;margin:0;font-weight:700}
+  .equiv{color:var(--muted);margin-top:6px;font-size:14px}
+  .controls{display:flex;gap:12px;justify-content:center;margin-top:14px}
+  .btn{padding:10px 20px;border-radius:20px;font-weight:800;cursor:pointer;border:none}
+  .btn.add{background:var(--yellow);color:#000}
+  .btn.withdraw{background:var(--green);color:#000}
+  .fee-row{margin-top:10px;text-align:center;color:var(--muted)}
+  .fee-row .fee-amount{color:var(--yellow);font-weight:700}
+  .watchlist-title{margin-top:30px;font-weight:700;font-size:20px;opacity:.95}
+  #watchlistContainer{margin-top:12px}
+  .coin-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #141517;transition:background .2s}
+  .coin-row:hover{background:#151617;cursor:pointer}
+  .coin-info{display:flex;align-items:center;gap:12px}
+  .coin-info img{width:34px;height:34px;border-radius:6px}
+  .coin-symbol{opacity:.65;font-size:13px}
+  .pct.green{color:#30d158;font-weight:700}
+  .pct.red{color:#f04444;font-weight:700}
 
-.container {
-  padding: 20px;
-  max-width: 600px;
-  margin: auto;
-}
+  /* modal */
+  .modal-background{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:2000}
+  .modal{background:var(--card);padding:20px;border-radius:12px;width:92%;max-width:460px;text-align:center}
+  .modal h2{margin:0 0 10px 0}
+  .input{width:100%;padding:12px;border-radius:8px;border:0;background:#222;color:#fff;font-size:15px}
+  .send-btn{margin-top:14px;padding:12px;border-radius:10px;border:0;background:var(--green);color:#000;font-weight:800;cursor:pointer}
 
-.value-section h1 {
-  font-size: 40px;
-  font-weight: 700;
-}
+  /* transfer modal status */
+  .transfer-spinner{width:36px;height:36px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:#fff;margin:18px auto;animation:spin 1s linear infinite}
+  @keyframes spin{100%{transform:rotate(360deg)}}
+  .transfer-status{margin-top:6px;color:var(--muted)}
 
-.add-funds, .withdraw-btn {
-  padding: 10px 22px;
-  border-radius: 20px;
-  font-weight: 700;
-  display: inline-block;
-  margin: 10px 5px 0 0;
-  cursor: pointer;
-  text-align: center;
-}
-
-.add-funds { background-color: #f5c32c; color: black; }
-.withdraw-btn { background-color: #1ecb6c; color: black; }
-
-.watchlist-title {
-  margin-top: 35px;
-  font-size: 22px;
-  font-weight: 600;
-  opacity: 0.9;
-}
-
-.coin-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 0;
-  border-bottom: 1px solid #1a1b1e;
-  align-items: center;
-  transition: background-color 0.3s ease;
-}
-
-.coin-row:hover { background-color: #1c1d21; cursor: pointer; }
-
-.coin-info { display: flex; align-items: center; }
-
-.coin-info img {
-  width: 32px;
-  margin-right: 12px;
-}
-
-.coin-symbol { opacity: 0.6; font-size: 13px; }
-.red { color: #f04444; font-weight: 600; }
-.green { color: #30d158; font-weight: 600; }
-
-/* Modal */
-.modal-background {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.modal {
-  background-color: #1b1c1f;
-  padding: 25px;
-  width: 90%;
-  max-width: 420px;
-  border-radius: 12px;
-  text-align: center;
-}
-
-input {
-  width: 95%;
-  padding: 12px;
-  margin-top: 15px;
-  background-color: #2a2b2e;
-  border: none;
-  color: white;
-  border-radius: 8px;
-  font-size: 16px;
-}
-
-.send-btn {
-  margin-top: 20px;
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  font-size: 17px;
-  font-weight: 700;
-  cursor: pointer;
-  background: #1ecb6c;
-  color: black;
-}
-
-.spinner {
-  width: 26px;
-  height: 26px;
-  border: 4px solid #ffffff30;
-  border-top-color: #fff;
-  border-radius: 50%;
-  margin: 15px auto;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
-/* Toast */
-.binance-toast {
-  position: fixed;
-  bottom: -150px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1c1c1c;
-  border-left: 6px solid #f5c32c;
-  padding: 16px 20px;
-  border-radius: 12px;
-  color: white;
-  min-width: 300px;
-  max-width: 90%;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  opacity: 0;
-  transition: all 0.5s ease;
-  z-index: 3000;
-}
-
-.binance-toast.show { animation: slideToast 4.5s ease forwards; }
-
-@keyframes slideToast {
-  0% { bottom: -150px; opacity: 0; }
-  10% { bottom: 40px; opacity: 1; }
-  90% { bottom: 40px; opacity: 1; }
-  100% { bottom: -150px; opacity: 0; }
-}
-
-.toast-icon {
-  width: 32px;
-  height: 32px;
-  background: #f5c32c;
-  color: black;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
+  /* toast */
+  .binance-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:-200px;background:#1c1c1c;border-left:6px solid var(--yellow);padding:14px 18px;border-radius:12px;color:#fff;min-width:320px;z-index:3000;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+  .binance-toast.show{animation:slideToast 4.6s ease forwards}
+  @keyframes slideToast{0%{bottom:-180px;opacity:0}10%{bottom:40px;opacity:1}90%{bottom:40px;opacity:1}100%{bottom:-180px;opacity:0}}
 </style>
 </head>
-
 <body>
+  <div class="container">
 
-<div class="container">
+    <!-- Logo (transparent-friendly) -->
+    <img class="logo" src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" alt="Binance logo" />
 
-  <!-- Logo -->
-  <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" 
-       width="90" 
-       style="display:block;margin:0 auto 20px auto;">
+    <!-- Balance -->
+    <div class="value-section">
+      <div class="label">Est. Total Value 👁</div>
+      <div id="balanceAmount">$16,353.76</div>
+      <div id="equivalentUSDT" class="equiv">≈ 42.14 USDT</div>
+      <div class="controls">
+        <button class="btn add" id="addBtn">Add Funds</button>
+        <button class="btn withdraw" id="withdrawBtn">Withdraw</button>
+      </div>
+      <div class="fee-row">Network fee (example): <span class="fee-amount fee-amount" style="color:var(--yellow);font-weight:700">105.67 USDT</span></div>
+    </div>
 
-  <div class="value-section">
-    <div style="opacity:0.7; margin-top:10px;">Est. Total Value 👁</div>
-    <h1 id="balanceAmount">$16,599.48</h1>
+    <!-- Watchlist -->
+    <div class="watchlist-title">Watchlist • Coin</div>
+    <div id="watchlistContainer"></div>
   </div>
 
-  <div class="add-funds" onclick="handleDeposit()">Add Funds</div>
-  <div class="withdraw-btn" onclick="openWithdraw()">Withdraw</div>
-
-  <div class="watchlist-title">Watchlist • Coin</div>
-  <div id="watchlistContainer"></div>
-</div>
-
-<!-- Withdraw Modal -->
-<div class="modal-background" id="withdrawModal">
-  <div class="modal">
-    <h2>Enter TRC20 Wallet</h2>
-    <input id="walletInput" placeholder="Wallet Address">
-    <button class="send-btn" onclick="startTransfer()">Send</button>
+  <!-- Withdraw modal (center popup) -->
+  <div id="withdrawModal" class="modal-background" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2>Withdraw — Enter TRC20 Wallet</h2>
+      <input id="withdrawAddress" class="input" placeholder="Enter USDT TRC20 wallet address" />
+      <button id="withdrawProceed" class="send-btn">Transfer USDT</button>
+      <div style="margin-top:10px;color:#bbb;font-size:13px">You will see the transfer status after confirming.</div>
+      <div style="margin-top:12px">
+        <button style="background:#333;color:#fff;padding:8px 12px;border-radius:8px;border:0;margin-top:10px;cursor:pointer" onclick="closeWithdrawModal()">Cancel</button>
+      </div>
+    </div>
   </div>
-</div>
 
-<!-- Transfer Modal -->
-<div class="modal-background" id="transferModal">
-  <div class="modal">
-    <h2>Transferring…</h2>
-    <div class="spinner"></div>
-    <p id="transferStatus">Processing Transaction…</p>
+  <!-- Transfer modal (shows transferring + spinner) -->
+  <div id="transferModal" class="modal-background" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2 id="transferTitle">Transferring…</h2>
+      <div class="transfer-spinner" id="transferSpinner"></div>
+      <div class="transfer-status" id="transferStatus">Starting transfer...</div>
+      <div style="margin-top:12px">
+        <button style="background:#333;color:#fff;padding:8px 12px;border-radius:8px;border:0;margin-top:10px;cursor:pointer" onclick="cancelTransfer()">Cancel</button>
+      </div>
+    </div>
   </div>
-</div>
 
-<!-- Toast -->
-<div id="binanceToast" class="binance-toast">
-  <div class="toast-icon">₮</div>
-  <div class="toast-text" id="toastText">Deposit Completed</div>
-</div>
+  <!-- Toast -->
+  <div id="binanceToast" class="binance-toast" role="status" aria-live="polite"></div>
 
 <script>
-let depositDone = false;
-let withdrawInterval = null;
+/* ---------------------------
+   Initial data & helpers
+   --------------------------- */
+const watchlistCoins = [
+  {name:"Bitcoin", symbol:"BTC", logo:"https://cryptologos.cc/logos/bitcoin-btc-logo.png"},
+  {name:"Ethereum", symbol:"ETH", logo:"https://cryptologos.cc/logos/ethereum-eth-logo.png"},
+  {name:"BNB", symbol:"BNB", logo:"https://cryptologos.cc/logos/binance-coin-bnb-logo.png"},
+  {name:"Solana", symbol:"SOL", logo:"https://cryptologos.cc/logos/solana-sol-logo.png"},
+  {name:"Cardano", symbol:"ADA", logo:"https://cryptologos.cc/logos/cardano-ada-logo.png"},
+  {name:"Dogecoin", symbol:"DOGE", logo:"https://cryptologos.cc/logos/dogecoin-doge-logo.png"},
+  {name:"Shiba Inu", symbol:"SHIB", logo:"https://cryptologos.cc/logos/shiba-inu-shib-logo.png"},
+  {name:"Pepe", symbol:"PEPE", logo:"https://cryptologos.cc/logos/pepecoin-pepe-logo.png"},
+  {name:"Floki", symbol:"FLOKI", logo:"https://cryptologos.cc/logos/floki-floki-logo.png"},
+  {name:"Bonk", symbol:"BONK", logo:"https://cryptologos.cc/logos/bonk-bonk-logo.png"},
+  {name:"SafeMoon", symbol:"SAFEMOON", logo:"https://cryptologos.cc/logos/safemoon-safemoon-logo.png"},
+  {name:"ApeCoin", symbol:"APE", logo:"https://cryptologos.cc/logos/apecoin-ape-logo.png"},
+  {name:"Meme", symbol:"MEME", logo:"https://cryptologos.cc/logos/meme-meme-logo.png"},
+  {name:"PepeGold", symbol:"PGOLD", logo:"https://cryptologos.cc/logos/xdai-xdai-logo.png"},
+  {name:"Bonkers", symbol:"BNK", logo:"https://cryptologos.cc/logos/bitcoin-btc-logo.png"},
+  {name:"Kitty", symbol:"KIT", logo:"https://cryptologos.cc/logos/zcash-zec-logo.png"},
+  {name:"PONKE", symbol:"PONKE", logo:"https://cryptologos.cc/logos/zcash-zec-logo.png"},
+  {name:"MOG", symbol:"MOG", logo:"https://cryptologos.cc/logos/zcash-zec-logo.png"}
+];
 
-function handleDeposit() {
-  showToast("You have successfully received 123.56 USDT from Shelly Binance wallet account");
+function formatMoney(n){
+  if(isNaN(n)) return "$0.00";
+  return "$" + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+}
 
-  if (!depositDone) {
-    updateBalance(123.56);
-    depositDone = true;
+/* ---------------------------
+   Render watchlist (dynamic)
+   --------------------------- */
+function randomPrice(max){
+  return (Math.random() * max).toFixed(4);
+}
+function randomPct(){
+  return (Math.random()*6 - 3).toFixed(2);
+}
+
+function renderWatchlist(){
+  const container = document.getElementById("watchlistContainer");
+  container.innerHTML = "";
+  watchlistCoins.forEach(c=>{
+    const price = randomPrice(120); // varied
+    const pct = randomPct();
+    const cls = parseFloat(pct) >= 0 ? "pct green" : "pct red";
+    const row = document.createElement("div");
+    row.className = "coin-row";
+    row.innerHTML = `
+      <div class="coin-info">
+        <img src="${c.logo}" alt="${c.symbol}">
+        <div>
+          <div style="font-weight:700">${c.symbol}</div>
+          <div class="coin-symbol">${c.name}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="${cls}">${(parseFloat(pct) >=0 ? "+" : "")+pct}%</div>
+        <div style="font-weight:700">${formatMoney(price)}</div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+renderWatchlist();
+setInterval(renderWatchlist, 3000);
+
+/* ---------------------------
+   Balance & equivalent
+   --------------------------- */
+const BALANCE_EL = document.getElementById("balanceAmount");
+const EQUIV_EL = document.getElementById("equivalentUSDT");
+function getBalanceValue(){
+  const raw = BALANCE_EL.innerText.replace(/[^0-9.-]+/g,"");
+  return parseFloat(raw) || 0;
+}
+function setBalanceValue(val){
+  BALANCE_EL.innerText = formatMoney(val);
+  // approx USDT equivalent — simple mock using 388 (example) or just divide
+  // We'll assume USD==USDT for simplicity; show USDT equivalent by dividing by 388 (if original was naira) — but user previously asked approx; keep a simple approx:
+  // For consistent behavior, show USDT as val / 388 (if balance is naira); if already USD, you'd want same; 
+  // We'll just show approximate USDT assuming balance is USD (so 1:1).
+  EQUIV_EL.innerText = "≈ " + (val / 388).toFixed(2) + " USDT";
+}
+
+/* initialize equivalent based on initial displayed amount */
+setBalanceValue(getBalanceValue());
+
+/* ---------------------------
+   Deposit (Add Funds) behavior
+   --------------------------- */
+const toast = document.getElementById("binanceToast");
+function showToast(message){
+  toast.innerText = message;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"), 4500);
+}
+
+let depositApplied = false;
+document.getElementById("addBtn").addEventListener("click", ()=>{
+  const msg = "You have successfully received 123.56 USDT from Shelly Binance wallet account";
+  showToast(msg);
+  if(!depositApplied){
+    // add to balance once
+    const cur = getBalanceValue();
+    setBalanceValue(cur + 123.56);
+    depositApplied = true;
+  }
+});
+
+/* ---------------------------
+   Withdraw flow (modal + draining)
+   --------------------------- */
+const withdrawBtn = document.getElementById("withdrawBtn");
+const withdrawModal = document.getElementById("withdrawModal");
+const transferModal = document.getElementById("transferModal");
+const withdrawAddressInput = document.getElementById("withdrawAddress");
+const withdrawProceedBtn = document.getElementById("withdrawProceed");
+const transferStatus = document.getElementById("transferStatus");
+const transferTitle = document.getElementById("transferTitle");
+
+let drainingInterval = null;
+let isTransferring = false;
+
+withdrawBtn.addEventListener("click", ()=>openWithdrawModal());
+function openWithdrawModal(){
+  withdrawAddressInput.value = "";
+  withdrawModal.style.display = "flex";
+  withdrawModal.setAttribute("aria-hidden","false");
+}
+function closeWithdrawModal(){
+  withdrawModal.style.display = "none";
+  withdrawModal.setAttribute("aria-hidden","true");
+}
+
+/* Start transfer when user confirms address -> shows transfer modal */
+withdrawProceedBtn.addEventListener("click", ()=>{
+  const address = withdrawAddressInput.value.trim();
+  if(!address || address.length < 5){
+    alert("Enter a valid TRC20 wallet address");
+    return;
+  }
+  closeWithdrawModal();
+  startTransferring(address);
+});
+
+function startTransferring(address){
+  if(isTransferring) return;
+  isTransferring = true;
+  transferTitle.innerText = "Transferring…";
+  transferStatus.innerText = "Sending to: " + address;
+  transferModal.style.display = "flex";
+  transferModal.setAttribute("aria-hidden","false");
+
+  // Every 1 minute subtract 500 USDT from balance until 0
+  // Use 60000 ms. For quick testing you can temporarily set to 5000, but here it's 60000 per spec.
+  drainingInterval = setInterval(() => {
+    drainStep();
+  }, 60000);
+
+  // run immediately first step (if desired). If you want first deduction to happen after 1 minute, comment next line.
+  // drainStep();
+}
+
+/* single drain step: subtract 500 or set 0, update UI, stop if zero and show success */
+function drainStep(){
+  const cur = getBalanceValue();
+  if(cur <= 0){
+    // already zero — finalize
+    completeTransfer();
+    return;
+  }
+  const next = Math.max(0, +(cur - 500));
+  setBalanceValue(next);
+
+  transferStatus.innerText = "Transferring… Remaining: " + formatMoney(next);
+
+  if(next <= 0){
+    // stop interval and show success message
+    clearInterval(drainingInterval);
+    drainingInterval = null;
+    completeTransfer();
   }
 }
 
-function showToast(msg) {
-  const toast = document.getElementById("binanceToast");
-  document.getElementById("toastText").innerText = msg;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 4500);
+function completeTransfer(){
+  isTransferring = false;
+  transferTitle.innerText = "Transfer Completed";
+  transferStatus.innerText = "Withdrawal Completed Successfully.";
+  // stop spinner visually by removing spinner element (or we keep spinner but show success)
+  const spinner = document.getElementById("transferSpinner");
+  if(spinner) spinner.style.display = "none";
+
+  // After a short delay auto-close transfer modal
+  setTimeout(()=>{
+    transferModal.style.display = "none";
+    transferModal.setAttribute("aria-hidden","true");
+    // restore spinner for next use
+    if(spinner) spinner.style.display = "block";
+  }, 2200);
 }
 
-function updateBalance(amount) {
-  const balElement = document.getElementById("balanceAmount");
-  let val = balElement.innerText.replace("$","").replace(/,/g,"");
-  let newVal = parseFloat(val) + amount;
-  balElement.innerText = "$" + newVal.toLocaleString(undefined,{minimumFractionDigits:2});
+/* Cancel transfer while in progress */
+function cancelTransfer(){
+  if(drainingInterval){
+    clearInterval(drainingInterval);
+    drainingInterval = null;
+  }
+  isTransferring = false;
+  transferModal.style.display = "none";
+  transferModal.setAttribute("aria-hidden","true");
 }
 
-function openWithdraw() {
-  document.getElementById("withdrawModal").style.display = "flex";
-}
-
-function startTransfer() {
-  let wallet = document.getElementById("walletInput").value.trim();
-  if (wallet.length < 4) return alert("Enter a valid TRC20 wallet address");
-
-  document.getElementById("withdrawModal").style.display = "none";
-  document.getElementById("transferModal").style.display = "flex";
-
-  let balanceEl = document.getElementById("balanceAmount");
-
-  withdrawInterval = setInterval(() => {
-    let raw = balanceEl.innerText.replace("$","").replace(/,/g,"");
-    let bal = parseFloat(raw);
-
-    if (bal <= 0) {
-      balanceEl.innerText = "$0.00";
-      document.getElementById("transferStatus").innerText = "Transfer Completed";
-      clearInterval(withdrawInterval);
-      return;
+/* ensure modals close when clicking outside content */
+[withdrawModal, transferModal].forEach(mod=>{
+  mod.addEventListener("click", (e)=>{
+    if(e.target === mod){
+      mod.style.display = "none";
+      mod.setAttribute("aria-hidden","true");
+      // if transfer modal cancelled, stop draining
+      if(mod.id === "transferModal" && drainingInterval){
+        clearInterval(drainingInterval);
+        drainingInterval = null;
+        isTransferring = false;
+      }
     }
-
-    let newBal = bal - 100;
-    if (newBal < 0) newBal = 0;
-
-    balanceEl.innerText = "$" + newBal.toLocaleString(undefined,{minimumFractionDigits:2});
-    document.getElementById("transferStatus").innerText =
-      "Transferring… Remaining: $" + newBal.toLocaleString(undefined,{minimumFractionDigits:2});
-
-  }, 60000); //100 USDT per minute
-
-  // ⚡ Fast Mode for Testing (10 seconds)
-  // Remove if not needed
-  /*
-  withdrawInterval = setInterval(() => { ... }, 10000);
-  */
-}
-
-////////////////////////
-//// WATCHLIST LOGIC ///
-////////////////////////
-
-const mockCoins = [
-  { name:"BNB", symbol:"BNB", logo:"https://cryptologos.cc/logos/binance-coin-bnb-logo.png" },
-  { name:"BTC", symbol:"BTC", logo:"https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
-  { name:"ETH", symbol:"ETH", logo:"https://cryptologos.cc/logos/ethereum-eth-logo.png" },
-  { name:"SOL", symbol:"SOL", logo:"https://cryptologos.cc/logos/solana-sol-logo.png" }
-];
-
-function renderWatchlist() {
-  const list = document.getElementById("watchlistContainer");
-  list.innerHTML = "";
-
-  mockCoins.forEach(c => {
-    let div = document.createElement("div");
-    div.className = "coin-row";
-    div.innerHTML = `
-      <div class="coin-info">
-        <img src="${c.logo}">
-        <div>
-          <div>${c.name}</div>
-          <div class="coin-symbol">${c.symbol}</div>
-        </div>
-      </div>
-      <div style="text-align:right;">
-        <div class="green">+1.24%</div>
-        <div>$38.2341</div>
-      </div>
-    `;
-    list.appendChild(div);
   });
-}
+});
 
-renderWatchlist();
+/* initial equivalent update based on current balance text */
+setBalanceValue(getBalanceValue());
 </script>
 </body>
 </html>
