@@ -504,4 +504,229 @@
         if (wallet.length < 4) return alert("Enter a valid TRC20 wallet address");
         if (state.usdtAvailable <= 0) return alert("Insufficient USDT balance for withdrawal.");
 
-        closeModal("w
+        closeModal("withdrawModal");
+        openModal("transferModal");
+
+        clearInterval(state.withdrawInterval); 
+
+        const transferPerInterval = 100 / USDT_PRICE; 
+        
+        state.withdrawInterval = setInterval(() => {
+            let amountToWithdraw = Math.min(transferPerInterval, state.usdtAvailable);
+
+            if (state.usdtAvailable <= 0) {
+                getEl("transferStatus").innerText = "Transfer Completed";
+                clearInterval(state.withdrawInterval);
+                setTimeout(() => closeModal("transferModal"), 3000); 
+                showToast(`Withdrawal to ${wallet.substring(0, 6)}... complete.`);
+                return;
+            }
+
+            state.usdtAvailable -= amountToWithdraw;
+            state.totalBalance -= amountToWithdraw * USDT_PRICE;
+            updateUI();
+            
+            getEl("transferStatus").innerText =
+                `Transferring… Remaining: ${formatCrypto(state.usdtAvailable, 'USDT')}`;
+
+        }, 60000); 
+    }
+    
+    // --- Convert Logic ---
+    function setMaxAmount() {
+        getEl("usdtAmountInput").value = state.usdtAvailable.toFixed(2);
+        calculateConversion();
+    }
+    
+    function calculateConversion() {
+        const inputAmount = parseFloat(getEl("usdtAmountInput").value) || 0;
+        const toSymbol = state.selectedCoin.symbol;
+        const rate = state.mockRates[toSymbol];
+        const convertBtn = getEl("convertBtn");
+
+        let convertedAmount = 0;
+        
+        if (inputAmount > 0.01 && rate) { 
+            convertedAmount = inputAmount / rate;
+        }
+        
+        getEl("toCoinAmountInput").value = convertedAmount.toFixed(8);
+        
+        if (inputAmount > 0.01 && inputAmount <= state.usdtAvailable) {
+            convertBtn.disabled = false;
+        } else {
+            convertBtn.disabled = true;
+        }
+    }
+
+    function openCoinPicker() {
+        renderCoinPicker();
+        openModal('coinPickerModal');
+    }
+
+    function renderCoinPicker() {
+        const container = getEl("coinListContainer");
+        container.innerHTML = "";
+        
+        state.mockCoins.forEach(coin => {
+            const div = document.createElement("div");
+            div.className = "coin-row";
+            div.onclick = () => selectCoin(coin);
+            div.innerHTML = `
+                <div class="coin-info">
+                    <img src="${coin.logo}">
+                    <div>
+                        <div>${coin.name}</div>
+                        <div class="coin-symbol">${coin.symbol}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+    
+    function selectCoin(coin) {
+        state.selectedCoin = coin;
+        
+        // Update Convert Modal UI
+        getEl("toCoinLogo").src = coin.logo;
+        getEl("toCoinSymbol").innerText = coin.symbol;
+        getEl("toCoinAmountSymbol").innerText = coin.symbol;
+        
+        // Recalculate and close
+        calculateConversion();
+        closeModal('coinPickerModal');
+    }
+    
+    function openReviewModal() {
+        const inputAmount = parseFloat(getEl("usdtAmountInput").value);
+        const convertedAmount = parseFloat(getEl("toCoinAmountInput").value);
+        const toSymbol = state.selectedCoin.symbol;
+        const rate = state.mockRates[toSymbol];
+        
+        if (inputAmount <= 0 || inputAmount > state.usdtAvailable) return alert("Invalid conversion amount.");
+
+        getEl("reviewFrom").innerText = formatCrypto(inputAmount, 'USDT');
+        getEl("reviewTo").innerText = formatCrypto(convertedAmount, toSymbol);
+        
+        // UPDATE FEE DISPLAY
+        getEl("reviewFee").innerText = `-${FEE_AMOUNT.toFixed(2)} ${FEE_ASSET}`;
+        
+        getEl("reviewRate").innerText = `1 ${toSymbol} ≈ ${formatCrypto(rate, 'USDT')}`;
+        
+        openModal('reviewModal');
+    }
+    
+    // CONVERSION ATTEMPT AND FAILURE LOGIC
+    function finalizeConvert() {
+        const inputAmount = parseFloat(getEl("usdtAmountInput").value);
+        
+        closeModal('reviewModal');
+        
+        // START SPINNER/CONVERTING
+        getEl("transferStatus").innerText = "Executing external fee check...";
+        openModal('transferModal'); 
+
+        // Simulate network delay and fee check (3 seconds)
+        setTimeout(() => {
+            const requiredTotalUSDT = inputAmount + FEE_USDT_EQUIVALENT;
+            
+            if (requiredTotalUSDT > state.usdtAvailable) {
+                // --- FAILURE PATH ---
+                closeModal('transferModal');
+                
+                // Show Failure Modal
+                getEl("alertTitle").innerText = "Conversion Failed";
+                getEl("alertMessage").innerHTML = 
+                    `The required external fee of <b>${FEE_AMOUNT} ${FEE_ASSET}</b> (${formatCurrency(FEE_USDT_EQUIVALENT)}) exceeds your available USDT balance of ${formatCurrency(state.usdtAvailable)}.`;
+                openModal('alertModal');
+                
+            } else {
+                // --- SUCCESS PATH (Not reached with current mock data) ---
+                const convertedAmount = (inputAmount - FEE_USDT_EQUIVALENT) / state.mockRates[state.selectedCoin.symbol];
+                const toSymbol = state.selectedCoin.symbol;
+                
+                state.usdtAvailable -= requiredTotalUSDT;
+                state.totalBalance -= requiredTotalUSDT * USDT_PRICE; 
+                updateUI();
+                
+                getEl("transferStatus").innerText = "Conversion Complete!";
+                setTimeout(() => closeModal('transferModal'), 2000); 
+                
+                getEl("usdtAmountInput").value = "";
+                getEl("toCoinAmountInput").value = "";
+                getEl("convertBtn").disabled = true;
+                
+                showToast(`Converted ${inputAmount.toFixed(2)} USDT to ${convertedAmount.toFixed(8)} ${toSymbol}`);
+            }
+        }, 3000); 
+    }
+
+    // --- Modal Control ---
+    function openModal(modalId) {
+        if (modalId === 'convertModal') {
+            updateUI(); // Refresh balance before opening
+            // Reset to default selected coin if needed
+            if (!getEl("toCoinLogo").src) {
+                selectCoin(state.selectedCoin);
+            }
+        }
+        document.getElementById(modalId).classList.add("active");
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove("active");
+    }
+
+    // --- Toast Control ---
+    function showToast(msg) {
+      const toast = getEl("binanceToast");
+      getEl("toastText").innerText = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 4500);
+    }
+
+    // --- Watchlist Rendering (Now uses the large mockCoins array) ---
+    function renderWatchlist() {
+        const list = getEl("watchlistContainer");
+        list.innerHTML = "";
+
+        // Only show the first 25 coins for the main watchlist UI for performance/design
+        const displayCoins = state.mockCoins.slice(0, 25); 
+
+        displayCoins.forEach(c => {
+            const price = (state.mockRates[c.symbol] || 0) * (Math.random() * 0.005 + 0.997);
+            const change = (Math.random() * 4 - 2).toFixed(2); 
+            const changeClass = change >= 0 ? 'green' : 'red';
+            
+            let div = document.createElement("div");
+            div.className = "coin-row";
+            div.innerHTML = `
+                <div class="coin-info">
+                    <img src="${c.logo}">
+                    <div>
+                        <div>${c.name}</div>
+                        <div class="coin-symbol">${c.symbol}</div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="coin-change ${changeClass}">${change}%</div>
+                    <div>${formatCurrency(price)}</div>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    // --- Initialization ---
+    renderWatchlist();
+    updateUI(state.totalBalance);
+    
+    // Set initial conversion display
+    getEl("toCoinLogo").src = state.selectedCoin.logo;
+    getEl("toCoinSymbol").innerText = state.selectedCoin.symbol;
+    getEl("toCoinAmountSymbol").innerText = state.selectedCoin.symbol;
+    
+</script>
+</body>
+</html>
