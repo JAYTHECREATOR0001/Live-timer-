@@ -1,830 +1,1654 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binance Wallet - Full Stack Refactor</title>
+    <title>Revolut - High-Value Transfer Verification Portal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        revolut: {
+                            dark: '#08090d',
+                            card: '#12141f',
+                            cardLight: '#1a1d2d',
+                            accent: '#00e6a8',
+                            accentHover: '#00c48f',
+                            cyan: '#00d4b1',
+                            blue: '#1964ff',
+                            amber: '#ff9800',
+                            red: '#ff4d4d'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
-        /* CSS Variables for better maintenance */
-        :root {
-            --color-primary: #f5c32c; /* Binance Yellow */
-            --color-success: #1ecb6c; /* Binance Green */
-            --color-danger: #f04444; /* Red */
-            --color-background-dark: #0e0f11;
-            --color-card-dark: #1b1c1f;
-            --color-text-light: #ffffff;
-            --color-text-faded: #a0a0a0;
-            --color-separator: #1a1b1e;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --padding-h: 20px;
-        }
-
+        /* Custom scrollbar and glassmorphism styling */
         body {
-            margin: 0;
-            font-family: var(--font-family);
-            background-color: var(--color-background-dark);
-            color: var(--color-text-light);
+            background-color: #08090d;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 230, 168, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 90% 20%, rgba(25% 100 255 / 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
         }
 
-        .container {
-            padding: var(--padding-h);
-            max-width: 600px;
-            margin: auto;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+        .glass-panel {
+            background: rgba(18, 20, 31, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* --- Global Components --- */
-        .btn {
-            padding: 10px 22px;
-            border-radius: 6px; 
-            font-weight: 700;
-            display: inline-block;
-            margin: 10px 5px 0 0;
-            cursor: pointer;
-            text-align: center;
-            transition: opacity 0.2s;
-            border: none;
-        }
-        .btn:hover { opacity: 0.85; }
-        .btn-primary { background-color: var(--color-primary); color: black; }
-        .btn-success { background-color: var(--color-success); color: black; }
-        .btn-danger { background-color: var(--color-danger); color: white; }
-
-        /* --- Home Section --- */
-        .logo-header {
-            display: block;
-            margin: 0 auto 20px auto;
+        .glass-panel-glow {
+            background: rgba(22, 25, 38, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 230, 168, 0.2);
+            box-shadow: 0 0 35px -5px rgba(0, 230, 168, 0.15);
         }
 
-        .value-section h1 {
-            font-size: 40px;
-            font-weight: 700;
-        }
-        .value-section p {
-            opacity: 0.7;
-            margin-top: 10px;
-            font-size: 14px;
+        .glow-mint {
+            box-shadow: 0 0 25px rgba(0, 230, 168, 0.35);
         }
 
-        .action-btns {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 15px 0 0 -5px;
+        .text-gradient-mint {
+            background: linear-gradient(135deg, #ffffff 0%, #00e6a8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .watchlist-title {
-            margin-top: 35px;
-            font-size: 22px;
-            font-weight: 600;
-            opacity: 0.9;
+        .text-gradient-amber {
+            background: linear-gradient(135deg, #ffe082 0%, #ff9800 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .coin-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 14px 0;
-            border-bottom: 1px solid var(--color-separator);
-            align-items: center;
-            transition: background-color 0.1s ease;
+        .badge-pill {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
-        .coin-row:hover { background-color: #1c1d21; cursor: pointer; }
-
-        .coin-info { display: flex; align-items: center; }
-
-        .coin-info img {
-            width: 32px;
-            margin-right: 12px;
-            border-radius: 50%;
+        .pulse-slow {
+            animation: pulse 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
         }
 
-        .coin-symbol { opacity: 0.6; font-size: 13px; }
-        .coin-change.red { color: var(--color-danger); font-weight: 600; }
-        .coin-change.green { color: var(--color-success); font-weight: 600; }
-
-        /* --- Modal Base --- */
-        .modal-background {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        .modal-background.active { display: flex; }
-
-        .modal {
-            background-color: var(--color-card-dark);
-            padding: 25px;
-            width: 90%;
-            max-width: 420px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        .modal-title { font-size: 20px; margin-bottom: 20px; font-weight: 600; }
-
-        /* --- Form Elements --- */
-        .input-group {
-            margin-top: 15px;
-            position: relative;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            background-color: #2a2b2e;
-            border: none;
-            color: var(--color-text-light);
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        .input-addon {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--color-text-faded);
-            font-weight: 600;
-        }
-        .input-addon.max-btn {
-            color: var(--color-primary);
-            cursor: pointer;
-            padding: 2px 5px;
-            border-radius: 4px;
-        }
-        
-        /* --- Convert Modal Styles --- */
-        .convert-select {
-            background-color: #2a2b2e;
-            padding: 10px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-        .convert-select:hover { opacity: 0.9; }
-        .convert-select img { width: 24px; margin-right: 10px; }
-        .convert-select-info { display: flex; align-items: center; }
-        .convert-select-label { color: var(--color-text-faded); font-size: 12px; text-align: left; }
-        .convert-select-value { font-size: 16px; font-weight: 600; }
-        .exchange-icon {
-            font-size: 20px;
-            color: var(--color-text-faded);
-            margin: 15px auto;
-            display: block;
-        }
-        
-        /* --- Review Modal Styles --- */
-        .review-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 15px;
-            border-bottom: 1px solid var(--color-separator);
-        }
-        .review-row:last-of-type { border-bottom: none; }
-        .review-label { color: var(--color-text-faded); }
-        .review-value.fee { color: var(--color-danger); }
-        .review-value { font-weight: 600; }
-
-        /* --- Utility Classes --- */
-        .spinner {
-            width: 26px;
-            height: 26px;
-            border: 4px solid #ffffff30;
-            border-top-color: var(--color-text-light);
-            border-radius: 50%;
-            margin: 15px auto;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* ===================================================
-        CRITICAL FIX: Toast Styles for reliable animation
-        ===================================================
-        */
-        .binance-toast {
-            position: fixed;
-            bottom: -150px; /* Hidden position */
-            left: 50%;
-            transform: translateX(-50%);
-            background: #2a2b2e; /* Darker background */
-            padding: 16px 20px;
-            border-radius: 18px; /* Softer rounded corners */
-            color: var(--color-text-light);
-            min-width: 320px;
-            max-width: 90%;
-            font-weight: 700;
-            display: flex;
-            flex-direction: column; /* Use column to stack header and body */
-            gap: 5px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); 
-            opacity: 0;
-            /* CRITICAL: Use transition for smooth slide-up/fade-in */
-            transition: bottom 0.5s ease-out, opacity 0.5s ease-out;
-            z-index: 3000;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
-        .binance-toast.show { 
-            bottom: 40px; /* Visible position */
-            opacity: 1;
-        }
-        
-        /* Custom header for the notification */
-        .toast-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            font-size: 14px;
+        .blur-sensitive {
+            filter: blur(6px);
+            user-select: none;
+            transition: filter 0.3s ease;
         }
 
-        .toast-header .logo-time {
-            display: flex;
-            align-items: center;
-            font-weight: 600;
-        }
-        
-        .toast-header .logo-time img {
-            width: 16px; 
-            height: 16px; 
-            margin-right: 6px;
-            filter: drop-shadow(0 0 1px #f5c32c);
+        .blur-sensitive.revealed {
+            filter: blur(0);
         }
 
-        .toast-header .time {
-            color: #a0a0a0;
-            font-weight: 400;
-        }
-
-        .toast-body {
-            font-size: 16px;
-            font-weight: 700;
-            line-height: 1.4;
-        }
-
-        /* Adjusting toast control buttons for the new style */
-        .toast-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-left: auto;
-        }
-        .toast-controls .show-less, .toast-controls .close-btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .toast-controls .close-btn {
-            background: none;
-            font-size: 18px;
-            padding: 0 4px;
+        /* Toast animation */
+        #toastContainer {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
     </style>
 </head>
+<body class="min-h-screen flex flex-col justify-between text-gray-100 selection:bg-revolut-accent selection:text-black">
 
-<body>
-
-<div class="container">
-
-    <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" 
-         width="90" 
-         class="logo-header">
-
-    <div class="value-section">
-        <p>Est. Total Value 👁</p>
-        <h1 id="balanceAmount">$16,599.48</h1>
-        <p id="usdtBalance" style="opacity: 0.5; font-size: 12px; margin-top: 0;">USDT Available: 0.00 (approx. 0.00 ETH)</p>
-    </div>
-
-    <div class="action-btns">
-        <div class="btn btn-primary" onclick="simulateDeposit()">Deposit</div>
-        <div class="btn btn-success" onclick="openModal('withdrawModal')">Withdraw</div>
-        <div class="btn btn-success" onclick="openModal('convertModal')">Convert</div>
-    </div>
-
-    <div class="watchlist-title">Watchlist • Coin</div>
-    <div id="ethWatchlistRow" class="coin-row">
-        <div class="coin-info">
-            <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" alt="ETH">
-            <div>
-                <div>Ethereum</div>
-                <div class="coin-symbol">ETH</div>
-            </div>
-        </div>
-        <div style="text-align:right;">
-            <div id="ethChange" class="coin-change green">+0.30%</div>
-            <div id="ethAmount">$50.00</div> 
-        </div>
-    </div>
-    <div id="watchlistContainer"></div>
-</div>
-
-<div class="modal-background" id="withdrawModal" onclick="closeModal('withdrawModal')">
-    <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title">Withdraw Crypto</div>
-
-        <div class="input-group">
-            <label class="convert-select-label" style="margin-bottom: 5px; display: block; text-align: left;">Coin</label>
-            <div class="convert-select" onclick="openCoinPicker('withdraw')">
-                <div class="convert-select-info">
-                    <img id="withdrawCoinLogo" src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" alt="BTC">
-                    <div id="withdrawCoinSymbol">BTC</div>
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 w-full border-b border-white/10 glass-panel">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-revolut-accent to-revolut-cyan flex items-center justify-center font-extrabold text-black text-xl shadow-lg shadow-revolut-accent/20">
+                    R
                 </div>
-                <div>></div>
-            </div>
-        </div>
-        
-        <div class="input-group">
-            <input type="number" id="withdrawAmountInput" placeholder="Amount">
-            <div class="input-addon max-btn" onclick="setMaxAmount('withdraw')">MAX</div>
-        </div>
-
-        <div class="input-group">
-            <input type="text" id="withdrawAddressInput" placeholder="Recipient Address">
-            <div class="input-addon">Wallet</div>
-        </div>
-
-        <button class="btn btn-success" style="width: 100%; margin-top: 30px;" onclick="simulateWithdraw()">Withdraw</button>
-    </div>
-</div>
-
-<div class="modal-background" id="convertModal" onclick="closeModal('convertModal')">
-    <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title">Convert Crypto</div>
-
-        <div class="input-group">
-            <label class="convert-select-label" style="margin-bottom: 5px; display: block; text-align: left;">From</label>
-            <div class="convert-select" onclick="openCoinPicker('convert-from')">
-                <div class="convert-select-info">
-                    <img id="convertFromLogo" src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT">
-                    <div id="convertFromSymbol">USDT</div>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-lg tracking-wider text-white flex items-center gap-1.5">
+                        Revolut <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-revolut-accent font-medium border border-revolut-accent/20">VERIFY</span>
+                    </span>
+                    <span class="text-[10px] text-gray-400 font-medium tracking-widest uppercase">Secure Settlement Network</span>
                 </div>
-                <div>></div>
+            </div>
+
+            <!-- Header Status Pill -->
+            <div class="hidden sm:flex items-center gap-2 badge-pill px-3.5 py-1.5 rounded-full text-xs font-medium text-gray-300">
+                <span class="w-2 h-2 rounded-full bg-revolut-accent animate-pulse"></span>
+                <span>Enterprise Node #667</span>
+                <span class="text-gray-500">|</span>
+                <span class="text-revolut-accent font-semibold"><i class="fa-solid fa-shield-halved mr-1"></i>256-Bit SSL</span>
+            </div>
+
+            <!-- Contact / Help Pill -->
+            <button onclick="showToast('Revolut Priority Compliance Line Connected.', 'info')" class="text-xs font-semibold px-4 py-2 rounded-full badge-pill hover:bg-white/10 transition-all flex items-center gap-2 text-gray-200">
+                <i class="fa-solid fa-headset text-revolut-accent"></i>
+                <span>Compliance Support</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col justify-center">
+
+        <!-- Top Announcement Tag -->
+        <div class="flex justify-center mb-6">
+            <div class="inline-flex items-center gap-2 badge-pill px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium text-gray-300 border border-white/15 shadow-inner">
+                <span class="w-2 h-2 rounded-full bg-revolut-accent"></span>
+                <span class="text-gray-400">Institutional Protocol:</span>
+                <span class="text-white font-semibold">Tier 3 Settlement Verification</span>
             </div>
         </div>
 
-        <div class="input-group">
-            <input type="number" id="convertAmountInput" placeholder="Amount (Max: 15000.00)" min="0">
-            <div class="input-addon max-btn" onclick="setMaxAmount('convert')">MAX</div>
-        </div>
-        <p id="convertUSDTBalance" style="color: var(--color-text-faded); font-size: 12px; margin: 5px 0 0 0; text-align: right;">Available: 15000.00 USDT</p>
+        <!-- VIEW 1: CHECK STATUS INPUT VIEW -->
+        <section id="checkStatusView" class="transition-all duration-500 ease-in-out">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+                    Revolut High-Value Transfer <br class="hidden sm:inline"/>
+                    <span class="text-gradient-mint">Verification Portal</span>
+                </h1>
+                <p class="text-gray-400 text-sm sm:text-base leading-relaxed">
+                    Verify account tier compliance, secure limits, and pending incoming transfer status using your unique verification access key.
+                </p>
+            </div>
 
+            <!-- Glass Card Input Box -->
+            <div class="max-w-md mx-auto glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden shadow-2xl border border-white/10">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-revolut-accent/10 rounded-full filter blur-2xl pointer-events-none"></div>
+                
+                <form id="verifyForm" onsubmit="handleVerificationSubmit(event)" class="space-y-6 relative z-10">
+                    <div>
+                        <label for="verificationCode" class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">
+                            Enter Verification Code
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="verificationCode" 
+                                maxlength="10"
+                                placeholder="Enter Verification Code" 
+                                value=""
+                                required
+                                class="w-full bg-revolut-dark/90 border border-white/15 focus:border-revolut-accent rounded-2xl px-5 py-4 text-xl font-mono text-center tracking-widest text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-revolut-accent/30 transition-all shadow-inner"
+                            >
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-2 text-center">
+                            <i class="fa-solid fa-circle-info mr-1"></i> Code provided in your priority SMS or email dispatch.
+                        </p>
+                    </div>
 
-        <div class="exchange-icon">⇩</div>
-        
-        <div class="input-group">
-            <label class="convert-select-label" style="margin-bottom: 5px; display: block; text-align: left;">To</label>
-            <div class="convert-select" onclick="openCoinPicker('convert-to')">
-                <div class="convert-select-info">
-                    <img id="convertToLogo" src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" alt="BTC">
-                    <div id="convertToSymbol">BTC</div>
+                    <button 
+                        type="submit" 
+                        id="submitBtn"
+                        class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-revolut-accent to-revolut-cyan text-black font-extrabold text-base tracking-wide shadow-lg hover:shadow-revolut-accent/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 group"
+                    >
+                        <span>Check Verification Status</span>
+                        <i class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </form>
+
+                <!-- Feature checklist footer -->
+                <div class="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 gap-3 text-xs text-gray-400">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>Instant Settlement Lookup</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>FCA Regulated Standards</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>Tier Upgrade Eligibility</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>Automated Security Lock</span>
+                    </div>
                 </div>
-                <div>></div>
             </div>
-        </div>
-        
-        <div id="convertResult" style="margin-top: 20px; font-size: 16px; font-weight: 600; color: var(--color-success);"></div>
+        </section>
 
-        <button class="btn btn-primary" id="convertNowBtn" style="width: 100%; margin-top: 30px;" onclick="simulateConvert()">Convert Now</button>
-    </div>
-</div>
+        <!-- VIEW 2: LOADING / SPINNER STATE VIEW -->
+        <section id="loadingView" class="hidden transition-all duration-500 ease-in-out">
+            <div class="max-w-md mx-auto glass-panel-glow p-10 rounded-3xl text-center space-y-6 relative">
+                <!-- Spinner animation -->
+                <div class="relative w-24 h-24 mx-auto my-4 flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent/20"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent border-t-transparent animate-spin"></div>
+                    <div class="w-12 h-12 rounded-2xl bg-revolut-card flex items-center justify-center text-revolut-accent text-xl">
+                        <i class="fa-solid fa-shield-halved animate-pulse"></i>
+                    </div>
+                </div>
 
-<div class="modal-background" id="coinPickerModal" onclick="closeModal('coinPickerModal')">
-    <div class="modal" onclick="event.stopPropagation()" style="text-align: left; padding: 15px;">
-        <div class="modal-title" style="text-align: center;">Select Coin</div>
-        <input type="text" id="coinSearchInput" onkeyup="filterCoinPicker()" placeholder="Search coin name or symbol">
-        <div id="coinListContainer" style="max-height: 400px; overflow-y: scroll; margin-top: 10px;">
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-2">Verifying Network Record</h3>
+                    <p id="loadingStatusText" class="text-sm text-revolut-accent font-medium h-6 transition-all duration-300">
+                        Querying Revolut Network...
+                    </p>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                    <div id="loadingProgressBar" class="bg-gradient-to-r from-revolut-accent to-revolut-cyan h-full w-0 transition-all duration-500"></div>
+                </div>
+
+                <div class="text-[12px] text-gray-500 font-mono">
+                    SESSION ID: <span id="sessionIdText" class="text-gray-400">REV-88942-UK</span>
+                </div>
             </div>
-    </div>
-</div>
+        </section>
 
-<div class="modal-background" id="alertModal" onclick="closeModal('alertModal')">
-    <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title" id="alertTitle"></div>
-        <p id="alertMessage" style="color: var(--color-text-faded); font-size: 14px; margin-bottom: 20px;"></p>
-        <button class="btn btn-primary" style="width: 100%;" onclick="closeModal('alertModal')">OK</button>
-    </div>
-</div>
-
-<div id="binanceToast" class="binance-toast">
-    <div class="toast-header">
-        <div class="logo-time">
-            <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" alt="Binance Logo">
-            Binance
-        </div>
-        <div class="toast-controls">
-             <span class="time"></span> 
-        </div>
-    </div>
-    <div class="toast-body" id="toastText"></div>
-</div>
-
-<script>
-    // --- Configuration and State Management ---
-    const MOCK_TOTAL_BALANCE = 16599.48;
-    const MOCK_USDT_BALANCE = 15000.00; 
-    
-    // ETH Deposit Simulation Config
-    const ETH_DEPOSIT_USD_AMOUNT = 50.00; 
-    
-    // FEE CONFIGURATION (80 ETH)
-    const FEE_ASSET = "ETH";
-    const FEE_AMOUNT = 80; // This is the amount of ETH required for the fee
-
-    const USDT_PRICE = 1.00;
-    
-    let state = {
-        totalBalance: MOCK_TOTAL_BALANCE,
-        usdtAvailable: MOCK_USDT_BALANCE, 
-        ethAvailable: 0, 
-        selectedCoin: null, 
-        mockRates: {},
-        mockCoins: [],
-        coinPickerTarget: 'convert-to', // Tracks which modal opened the picker
-        withdrawCoin: { symbol: 'BTC', name: 'Bitcoin', logo: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
-        convertFromCoin: { symbol: 'USDT', name: 'Tether', logo: "https://cryptologos.cc/logos/tether-usdt-logo.png" },
-        convertToCoin: { symbol: 'BTC', name: 'Bitcoin', logo: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" }
-    };
-
-    // --- Data Generation Function ---
-    function generateMockData(count) {
-        let rates = {};
-        let coins = [];
-
-        // 1. Seed List 
-        const seedData = [
-            { name: "Bitcoin", symbol: "BTC", logo: "https://cryptologos.cc/logos/bitcoin-btc-logo.png", price: 30000 },
-            { name: "Ethereum", symbol: "ETH", logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png", price: 2000 }, 
-            { name: "BNB", symbol: "BNB", logo: "https://cryptologos.cc/logos/binance-coin-bnb-logo.png", price: 400 },
-            { name: "Solana", symbol: "SOL", logo: "https://cryptologos.cc/logos/solana-sol-logo.png", price: 120 },
-            { name: "Cardano", symbol: "ADA", logo: "https://cryptologos.cc/logos/cardano-ada-logo.png", price: 0.35 },
-            { name: "Dogecoin", symbol: "DOGE", logo: "https://cryptologos.cc/logos/dogecoin-doge-logo.png", price: 0.08 },
-            { name: "Polkadot", symbol: "DOT", logo: "https://cryptologos.cc/logos/polkadot-new-dot-logo.png", price: 6.5 },
-            { name: "Ripple", symbol: "XRP", logo: "https://cryptologos.cc/logos/ripple-xrp-logo.png", price: 0.55 },
-            { name: "Chainlink", symbol: "LINK", logo: "https://cryptologos.cc/logos/chainlink-link-logo.png", price: 14.00 },
-            { name: "Polygon", symbol: "MATIC", logo: "https://cryptologos.cc/logos/polygon-matic-logo.png", price: 0.85 },
-            { name: "Stellar", symbol: "XLM", logo: "https://cryptologos.cc/logos/stellar-xlm-logo.png", price: 0.12 },
-            { name: "Litecoin", symbol: "LTC", logo: "https://cryptologos.cc/logos/litecoin-ltc-logo.png", price: 70 },
-            { name: "Avalanche", symbol: "AVAX", logo: "https://cryptologos.cc/logos/avalanche-avax-logo.png", price: 35 },
-            { name: "Cosmos", symbol: "ATOM", logo: "https://cryptologos.cc/logos/cosmos-atom.png", price: 9.5 },
-            { name: "Near Protocol", symbol: "NEAR", logo: "https://cryptologos.cc/logos/near-protocol-near-logo.png", price: 3.2 },
-            { name: "Tron", symbol: "TRX", logo: "https://cryptologos.cc/logos/tron-trx-logo.png", price: 0.09 },
-            { name: "Filecoin", symbol: "FIL", logo: "https://cryptologos.cc/logos/filecoin-fil-logo.png", price: 5.8 },
-            { name: "Monero", symbol: "XMR", logo: "https://cryptologos.cc/logos/monero-xmr-logo.png", price: 150 },
-            { name: "Dash", symbol: "DASH", logo: "https://cryptologos.cc/logos/dash-dash-logo.png", price: 40 },
-            { name: "VeChain", symbol: "VET", logo: "https://cryptologos.cc/logos/vechain-vet-logo.png", price: 0.025 },
-            { name: "Tether", symbol: "USDT", logo: "https://cryptologos.cc/logos/tether-usdt-logo.png", price: 1.00 }
-        ];
-
-        seedData.forEach(item => {
-            coins.push({ name: item.name, symbol: item.symbol, logo: item.logo });
-            rates[item.symbol] = item.price;
-        });
-
-        // 2. Generate Remaining Generic Tokens
-        const currentCount = coins.length;
-        const remaining = count - currentCount;
-
-        for (let i = 1; i <= remaining; i++) {
-            const index = currentCount + i;
-            const symbol = `T${index}`;
-            const name = `Generic Token ${index}`;
-            const price = parseFloat((Math.random() * 99.99 + 0.01).toFixed(4));
+        <!-- VIEW 3: ACCOUNT DASHBOARD VIEW -->
+        <section id="dashboardView" class="hidden transition-all duration-500 ease-in-out space-y-6">
             
-            coins.push({ 
-                name: name, 
-                symbol: symbol, 
-                logo: `https://via.placeholder.com/32/cccccc?text=${symbol.charAt(0)}` 
-            });
-            rates[symbol] = price;
-        }
-
-        return { mockCoins: coins, mockRates: rates };
-    }
-
-    const { mockCoins, mockRates } = generateMockData(100);
-    state.mockCoins = mockCoins;
-    state.mockRates = mockRates;
-    
-    // Calculate initial ETH holding for the $50 in the original HTML
-    const ETH_PRICE_MOCK = state.mockRates['ETH'];
-    state.ethAvailable = 50.00 / ETH_PRICE_MOCK; 
-
-    // --- DOM Utility Functions ---
-    const getEl = id => document.getElementById(id);
-
-    function formatCurrency(amount) {
-        return "$" + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    
-    function formatCrypto(amount, symbol) {
-        const maxDecimals = (symbol === 'ETH' || symbol === 'USDT') ? 4 : 8; 
-        return parseFloat(amount).toLocaleString(undefined, { maximumFractionDigits: maxDecimals }) + " " + symbol;
-    }
-
-    // --- Modal Management ---
-    function openModal(id) {
-        getEl(id).classList.add('active');
-    }
-
-    function closeModal(id) {
-        getEl(id).classList.remove('active');
-    }
-
-    // --- Coin Picker Logic (Used by Withdraw and Convert) ---
-
-    function openCoinPicker(target) {
-        state.coinPickerTarget = target;
-        renderCoinPicker();
-        openModal('coinPickerModal');
-    }
-    
-    function renderCoinPicker(filterText = "") {
-        const container = getEl("coinListContainer");
-        container.innerHTML = "";
-        const lowerFilter = filterText.toLowerCase();
-
-        state.mockCoins
-            .filter(c => 
-                c.symbol.toLowerCase().includes(lowerFilter) || 
-                c.name.toLowerCase().includes(lowerFilter)
-            )
-            .forEach(c => {
-                let div = document.createElement("div");
-                div.className = "coin-row";
-                div.setAttribute('onclick', `selectCoin('${c.symbol}')`);
-                div.innerHTML = `
-                    <div class="coin-info">
-                        <img src="${c.logo}" alt="${c.symbol}">
+            <!-- Profile Overview Header Card -->
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 relative overflow-hidden">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    
+                    <!-- User details -->
+                    <div class="flex items-start sm:items-center gap-4">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-gray-800 to-revolut-cardLight border border-white/15 flex items-center justify-center text-white text-2xl font-black shadow-inner flex-shrink-0">
+                            JD
+                        </div>
                         <div>
-                            <div>${c.name}</div>
-                            <div class="coin-symbol">${c.symbol}</div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-[11px] font-semibold text-gray-300 tracking-wide uppercase">
+                                    Target Beneficiary
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[11px] font-semibold border border-amber-500/20">
+                                    Verification Pending
+                                </span>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                                JASVIR SINGH DHILLON
+                            </h2>
+                            <p class="text-xs sm:text-sm text-gray-400 mt-1 flex items-center gap-2">
+                                <span>Revolut Retail Account</span>
+                                <span>•</span>
+                                <span class="text-gray-300">Region: United Kingdom (GBP)</span>
+                            </p>
                         </div>
                     </div>
-                `;
-                container.appendChild(div);
-            });
-    }
 
-    function filterCoinPicker() {
-        const filterText = getEl("coinSearchInput").value;
-        renderCoinPicker(filterText);
-    }
-
-    function selectCoin(symbol) {
-        const selected = state.mockCoins.find(c => c.symbol === symbol);
-        if (!selected) return;
-
-        switch(state.coinPickerTarget) {
-            case 'withdraw':
-                state.withdrawCoin = selected;
-                getEl('withdrawCoinLogo').src = selected.logo;
-                getEl('withdrawCoinSymbol').innerText = selected.symbol;
-                break;
-            case 'convert-from':
-                state.convertFromCoin = selected;
-                getEl('convertFromLogo').src = selected.logo;
-                getEl('convertFromSymbol').innerText = selected.symbol;
-                break;
-            case 'convert-to':
-                state.convertToCoin = selected;
-                getEl('convertToLogo').src = selected.logo;
-                getEl('convertToSymbol').innerText = selected.symbol;
-                calculateConvertResult();
-                break;
-        }
-
-        closeModal('coinPickerModal');
-    }
-
-    // --- UI Update and Simulation Logic ---
-
-    function updateUI(newBalance) {
-        const ethPrice = state.mockRates['ETH'] || 2000; 
-        
-        // Calculate the total ETH equivalent of all available funds (Mock: just USDT and ETH)
-        const ethTotalEquivalent = (state.usdtAvailable / ethPrice) + state.ethAvailable;
-
-        state.totalBalance = newBalance !== undefined ? newBalance : state.totalBalance;
-        
-        getEl("balanceAmount").innerText = formatCurrency(state.totalBalance);
-        getEl("usdtBalance").innerText = `USDT Available: ${formatCrypto(state.usdtAvailable, 'USDT')} (approx. ${formatCrypto(ethTotalEquivalent, 'ETH')})`;
-        
-        // Update modal balance displays
-        if (getEl("convertUSDTBalance")) {
-             getEl("convertUSDTBalance").innerText = `Available: ${state.usdtAvailable.toFixed(2)} USDT`;
-             getEl("convertAmountInput").placeholder = `Amount (Max: ${state.usdtAvailable.toFixed(2)})`;
-        }
-        
-        if (getEl("ethAmount")) {
-            getEl("ethAmount").innerText = formatCurrency(state.ethAvailable * ethPrice);
-        }
-    }
-
-    // Deposit Logic (User asked to show all available token addresses)
-    function simulateDeposit() {
-        const availableCoins = state.mockCoins.slice(0, 5); // Show top 5 for simplicity
-        let depositList = "Please select a token to generate a deposit address:\n\n";
-        
-        // Randomly generate mock addresses
-        availableCoins.forEach(c => {
-            const mockAddress = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            depositList += `${c.symbol} (${c.name}):\n  ${mockAddress}\n\n`;
-        });
-        
-        showAlert("Deposit Addresses", depositList, "Deposit");
-    }
-
-    // Withdraw Logic (User asked for an error 404)
-    function simulateWithdraw() {
-        const amount = parseFloat(getEl('withdrawAmountInput').value);
-        const address = getEl('withdrawAddressInput').value.trim();
-
-        if (isNaN(amount) || amount <= 0) {
-            showAlert("Error", "Please enter a valid withdrawal amount.", "OK");
-            return;
-        }
-
-        if (address.length < 10) {
-            showAlert("Error", "Please provide a valid recipient address.", "OK");
-            return;
-        }
-
-        // Simulating the transaction failure as requested
-        const coinSymbol = state.withdrawCoin.symbol;
-        showAlert(
-            "Withdrawal Failed", 
-            `Error 404: The withdrawal of ${formatCrypto(amount, coinSymbol)} to ${address.substring(0, 10)}... could not be processed at this time.`,
-            "Try Again"
-        );
-        closeModal('withdrawModal');
-    }
-
-    // Convert Logic (User asked for an ETH fee error)
-    async function simulateConvert() {
-        const amount = parseFloat(getEl('convertAmountInput').value);
-        const fromSymbol = state.convertFromCoin.symbol;
-        const toSymbol = state.convertToCoin.symbol;
-        const convertBtn = getEl('convertNowBtn');
-        const convertResult = getEl('convertResult');
-
-        if (isNaN(amount) || amount <= 0 || fromSymbol !== 'USDT') {
-             showAlert("Error", "Please enter a valid amount and ensure conversion is from USDT.", "OK");
-             return;
-        }
-        if (amount > state.usdtAvailable) {
-             showAlert("Error", "Insufficient USDT balance.", "OK");
-             return;
-        }
-        if (fromSymbol === toSymbol) {
-             showAlert("Error", "Cannot convert a coin to itself.", "OK");
-             return;
-        }
-
-        // 1. Show spinner and simulation text
-        convertResult.innerHTML = `<div class="spinner"></div>`;
-        convertBtn.disabled = true;
-        
-        showToast(`Converting ${formatCrypto(amount, fromSymbol)} to ${toSymbol}. This will only take a second...`);
-        
-        // 2. Wait for simulation
-        await new Promise(resolve => setTimeout(resolve, 2500)); 
-
-        // 3. Show the required fee error (as requested)
-        const feeFiat = FEE_AMOUNT * state.mockRates['ETH'];
-        
-        // Show the toast error
-        showToast(`Transaction Failed: Not enough ${FEE_ASSET} for conversion fees. Top up your balance and try again.`);
-        
-        // Show the persistent error details in the modal
-        convertResult.innerHTML = `
-            <span style="color: var(--color-danger); font-weight: 700;">Transaction Failed</span>
-            <p style="color: var(--color-text-faded); font-size: 14px; margin: 5px 0 0 0;">
-                Required fee: **${FEE_AMOUNT} ${FEE_ASSET}** (~${formatCurrency(feeFiat)})
-            </p>
-        `;
-        
-        // 4. Reset UI
-        convertBtn.disabled = false;
-    }
-    
-    function calculateConvertResult() {
-        const amount = parseFloat(getEl('convertAmountInput').value);
-        const fromSymbol = state.convertFromCoin.symbol;
-        const toSymbol = state.convertToCoin.symbol;
-        const convertResult = getEl('convertResult');
-
-        if (isNaN(amount) || amount <= 0 || fromSymbol !== 'USDT') {
-            convertResult.innerHTML = "";
-            return;
-        }
-
-        const fromPrice = state.mockRates[fromSymbol] || 1;
-        const toPrice = state.mockRates[toSymbol] || 1;
-
-        if (fromPrice === 0 || toPrice === 0) {
-             convertResult.innerHTML = `<span style="color: var(--color-danger);">Invalid Rate</span>`;
-             return;
-        }
-
-        // Calculate amount
-        const amountInUSD = amount * fromPrice;
-        const receivedAmount = amountInUSD / toPrice;
-
-        convertResult.innerHTML = `You will receive: **${formatCrypto(receivedAmount, toSymbol)}**`;
-    }
-    
-    function setMaxAmount(target) {
-        if (target === 'convert') {
-            getEl('convertAmountInput').value = state.usdtAvailable.toFixed(2);
-            calculateConvertResult();
-        } 
-        // Note: Withdraw max is not implemented as we don't track all coin balances
-    }
-
-    // --- Toast Control ---
-    function showToast(msg) {
-      const toast = getEl("binanceToast");
-      const currentTime = new Date();
-      // Format time as HH:MM AM/PM
-      const timeString = currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-      
-      // 1. Update the content
-      getEl("toastText").innerHTML = msg;
-      toast.querySelector('.toast-header .time').innerText = timeString; 
-
-      // 2. CRITICAL: Show the toast by applying the 'show' class
-      toast.classList.add("show");
-      
-      // 3. Set timeout to hide the toast after 4 seconds
-      // We use 4500ms (4.5s) to ensure the message is visible for a standard duration.
-      setTimeout(() => {
-          toast.classList.remove("show");
-      }, 4500); 
-    }
-    
-    // --- Alert Modal ---
-    function showAlert(title, message, btnText = "OK") {
-        getEl('alertTitle').innerText = title;
-        getEl('alertMessage').innerText = message;
-        // In this simple alert, the OK button closes the modal
-        openModal('alertModal');
-    }
-
-
-    // --- Watchlist Rendering and other functions (omitted for brevity) ---
-    function renderWatchlist() {
-        const list = getEl("watchlistContainer");
-        list.innerHTML = "";
-        const displayCoins = state.mockCoins.slice(0, 25); 
-
-        displayCoins.forEach(c => {
-            if (c.symbol === "ETH" || c.symbol === "USDT") return; // Skip ETH and USDT
-            const price = (state.mockRates[c.symbol] || 0) * (Math.random() * 0.005 + 0.997);
-            const change = (Math.random() * 4 - 2).toFixed(2); 
-            const changeClass = change >= 0 ? 'green' : 'red';
-            
-            let div = document.createElement("div");
-            div.className = "coin-row";
-            div.innerHTML = `
-                <div class="coin-info">
-                    <img src="${c.logo}" alt="${c.symbol}">
-                    <div>
-                        <div>${c.name}</div>
-                        <div class="coin-symbol">${c.symbol}</div>
+                    <!-- Masked Banking Credentials Box -->
+                    <div class="bg-revolut-dark/80 p-4 sm:p-5 rounded-2xl border border-white/10 space-y-2.5 min-w-[260px]">
+                        <div class="flex justify-between items-center text-xs text-gray-400">
+                            <span>Account Details</span>
+                            <button onclick="toggleBlurDetails()" class="text-revolut-accent hover:underline flex items-center gap-1 font-semibold">
+                                <i id="eyeIcon" class="fa-solid fa-eye text-[11px]"></i>
+                                <span id="eyeText">Show</span>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-mono pt-1">
+                            <span class="text-gray-400 text-xs">Sort Code:</span>
+                            <span id="sortCodeVal" class="font-bold text-white tracking-widest blur-sensitive">20-••-••</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-mono pt-1 border-t border-white/5">
+                            <span class="text-gray-400 text-xs">Account No:</span>
+                            <span id="accountNoVal" class="font-bold text-white tracking-widest blur-sensitive">••••••3842</span>
+                        </div>
                     </div>
                 </div>
-                <div style="text-align:right;">
-                    <div class="coin-change ${changeClass}">${change}%</div>
-                    <div>${formatCurrency(price)}</div>
+            </div>
+
+            <!-- Main Transfer Highlight Card -->
+            <div class="glass-panel-glow p-6 sm:p-10 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-revolut-accent/10 rounded-full filter blur-3xl pointer-events-none"></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <!-- Left: Transfer Info -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></div>
+                            <span class="text-xs font-bold uppercase tracking-widest text-amber-400">
+                                Incoming Transfer On Hold
+                            </span>
+                        </div>
+
+                        <div>
+                            <span class="text-xs sm:text-sm text-gray-400 font-medium block mb-1">
+                                Total Pending Settlement Amount
+                            </span>
+                            <div class="text-4xl sm:text-6xl font-black text-gradient-mint tracking-tight font-mono">
+                                £89,999.54 <span class="text-2xl sm:text-3xl text-revolut-accent font-sans">GBP</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Pill Badge -->
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-xs sm:text-sm shadow-inner">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>
+                            <span>STATUS: NOT UPGRADED • PENDING</span>
+                        </div>
+
+                        <p class="text-xs sm:text-sm text-gray-300 leading-relaxed pt-2">
+                            This high-value transfer of <strong class="text-white font-semibold">£89,999.54 GBP</strong> is safely held in Revolut's central settlement vault under reference <code class="text-revolut-accent bg-white/10 px-1.5 py-0.5 rounded font-mono">REV-66753-IN</code>.
+                        </p>
+                    </div>
+
+                    <!-- Right: Limit Gauge / Threshold Notice -->
+                    <div class="lg:col-span-5 bg-revolut-card/90 p-5 sm:p-6 rounded-2xl border border-white/10 space-y-4">
+                        <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center justify-between">
+                            <span>Account Limit Bar</span>
+                            <span class="text-revolut-amber text-[11px]"><i class="fa-solid fa-lock mr-1"></i>Limit Exceeded</span>
+                        </h4>
+
+                        <!-- Visual Progress Bar -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-gray-400">Standard Tier Limit:</span>
+                                <span class="text-gray-300 font-mono">£10,000.00</span>
+                            </div>
+                            <div class="w-full bg-white/10 h-3 rounded-full overflow-hidden p-0.5 border border-white/10">
+                                <div class="bg-gradient-to-r from-revolut-accent via-amber-400 to-revolut-red h-full w-full rounded-full"></div>
+                            </div>
+                            <div class="flex justify-between text-[11px] font-mono">
+                                <span class="text-revolut-accent">Incoming: £89,999.54</span>
+                                <span class="text-revolut-red font-bold">+£79,999.54 Over Limit</span>
+                            </div>
+                        </div>
+
+                        <!-- Notice Text -->
+                        <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 text-xs leading-relaxed">
+                            <i class="fa-solid fa-circle-info text-amber-400 mr-1.5"></i>
+                            According to Financial Conduct Regulations, incoming deposits exceeding <strong>£10,000.00</strong> require a <strong>Tier 3 Priority Account Upgrade</strong> before settlement release.
+                        </div>
+                    </div>
                 </div>
-            `;
-            list.appendChild(div);
-        });
-    }
+            </div>
 
-    // --- Event Listeners for Convert Modal Input ---
-    document.addEventListener('DOMContentLoaded', () => {
-        const convertInput = getEl('convertAmountInput');
-        if (convertInput) {
-            // Recalculate result when input changes
-            convertInput.addEventListener('input', calculateConvertResult);
+            <!-- Detailed Breakdown Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-1">
+                    <span class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Transfer Protocol</span>
+                    <p class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-revolut-accent"></i>
+                        FPS / CHAPS Institutional
+                    </p>
+                    <p class="text-xs text-gray-500 pt-1">Direct Bank Settlement</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-1">
+                    <span class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Regulatory Compliance</span>
+                    <p class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-shield-cat text-revolut-cyan"></i>
+                        AML / Tier 3 Hold
+                    </p>
+                    <p class="text-xs text-gray-500 pt-1">Verification Code #66753</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-1">
+                    <span class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Estimated Release</span>
+                    <p class="text-sm font-bold text-revolut-accent flex items-center gap-2">
+                        <i class="fa-solid fa-clock"></i>
+                        Immediate Upon Upgrade
+                    </p>
+                    <p class="text-xs text-gray-500 pt-1">Automated Instant Release</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons Grid -->
+            <div class="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="text-center sm:text-left">
+                    <h4 class="text-base font-bold text-white">Required Action</h4>
+                    <p class="text-xs text-gray-400">Select an action below to proceed with verification or documentation.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onclick="triggerUpgradeSequence()"
+                        class="flex-1 sm:flex-initial py-3.5 px-6 rounded-2xl bg-gradient-to-r from-revolut-accent to-revolut-cyan text-black font-extrabold text-sm tracking-wide shadow-lg hover:shadow-revolut-accent/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Upgrade Now</span>
+                    </button>
+
+                    <button 
+                        onclick="openSummaryModal()"
+                        class="flex-1 sm:flex-initial py-3.5 px-5 rounded-2xl badge-pill hover:bg-white/15 text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-file-invoice text-revolut-accent"></i>
+                        <span>Transfer Summary</span>
+                    </button>
+
+                    <button 
+                        onclick="resetToCodeCheck()"
+                        class="py-3.5 px-4 rounded-2xl badge-pill hover:bg-white/15 text-gray-400 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-1.5"
+                        title="Check another verification code"
+                    >
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span class="sm:hidden">Reset</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 glass-panel py-6 text-center text-xs text-gray-500 mt-12">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-md bg-revolut-accent text-black font-black text-xs flex items-center justify-center">R</div>
+                <span class="text-gray-400 font-semibold">Revolut Ltd © 2026</span>
+                <span>•</span>
+                <span>Authorised EMI (Ref: 900876)</span>
+            </div>
+            <div class="flex gap-4 text-gray-400">
+                <a href="javascript:void(0)" onclick="showToast('Regulatory Compliance Policy active.', 'info')" class="hover:underline">Security Policy</a>
+                <a href="javascript:void(0)" onclick="showToast('Verification Protocol v4.8 Active.', 'info')" class="hover:underline">Verification Terms</a>
+                <a href="javascript:void(0)" onclick="showToast('Encryption key: 256-BIT-SHA', 'info')" class="hover:underline">Encryption Node</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: UPGRADE REQUEST MODAL -->
+    <div id="upgradeModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 transition-all duration-300">
+        <div class="glass-panel-glow max-w-lg w-full rounded-3xl p-6 sm:p-8 space-y-6 relative border border-revolut-accent/30 overflow-hidden max-h-[90vh] overflow-y-auto">
+            
+            <!-- Close Button -->
+            <button onclick="closeUpgradeModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Spinner State inside Modal -->
+            <div id="upgradeModalSpinner" class="py-12 text-center space-y-4">
+                <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent/20"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent border-t-transparent animate-spin"></div>
+                </div>
+                <h4 class="text-lg font-bold text-white">Initializing Upgrade Sequence...</h4>
+                <p class="text-xs text-gray-400">Configuring instant settlement profile parameters</p>
+            </div>
+
+            <!-- Modal Content (hidden during spinner) -->
+            <div id="upgradeModalContent" class="hidden space-y-6">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-revolut-accent/15 border border-revolut-accent/30 text-revolut-accent text-xs font-bold">
+                        <i class="fa-solid fa-shield-halved"></i> Tier Upgrade Specifications
+                    </div>
+                    <h3 class="text-2xl font-black text-white">Upgrade Profile Details</h3>
+                </div>
+
+                <!-- Specified Details Box -->
+                <div class="p-5 rounded-2xl bg-revolut-dark border border-white/10 space-y-3 font-mono text-sm">
+                    <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                        <span class="text-gray-400 font-sans text-xs">Address:</span>
+                        <span class="font-bold text-white tracking-widest"> 0xc52936dc633d313ed35c2401d781d7e54177d455 </span>
+                    </div>
+                    <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                        <span class="text-gray-400 font-sans text-xs">Pending Amount:</span>
+                        <span class="font-bold text-white tracking-widest">8,995.34 GBP</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 font-sans text-xs">Time:</span>
+                        <span class="font-bold text-revolut-accent uppercase tracking-wider">Instant</span>
+                    </div>
+                </div>
+
+                <!-- Confirmation Action Button -->
+                <button 
+                    onclick="closeUpgradeModal()"
+                    class="w-full py-4 rounded-2xl bg-gradient-to-r from-revolut-accent to-revolut-cyan text-black font-extrabold text-base tracking-wide shadow-lg hover:shadow-revolut-accent/30 transition-all flex items-center justify-center gap-2"
+                >
+                    <i class="fa-solid fa-check"></i>
+                    <span>Confirm & Close</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL 2: TRANSFER SUMMARY MODAL -->
+    <div id="summaryModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 transition-all duration-300">
+        <div class="glass-panel max-w-xl w-full rounded-3xl p-6 sm:p-8 space-y-6 relative border border-white/20 max-h-[90vh] overflow-y-auto">
+            
+            <!-- Close Button -->
+            <button onclick="closeSummaryModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Statement Header -->
+            <div class="border-b border-white/10 pb-5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-revolut-accent text-black font-extrabold flex items-center justify-center text-xl">
+                        R
+                    </div>
+                    <div>
+                        <h4 class="font-extrabold text-white text-lg">Transfer Release Summary</h4>
+                        <p class="text-xs text-gray-400">Official Settlement Hold Document</p>
+                    </div>
+                </div>
+                <div class="text-right font-mono text-[11px] text-gray-400">
+                    <div>DOC-ID: #88942-REV</div>
+                    <div class="text-revolut-accent">CONFIDENTIAL</div>
+                </div>
+            </div>
+
+            <!-- Printable Body -->
+            <div class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-4 bg-revolut-dark p-4 rounded-2xl border border-white/10">
+                    <div>
+                        <span class="text-gray-500 block mb-1">Beneficiary Name</span>
+                        <span class="font-bold text-white text-sm">JASVIR SINGH DHILLON</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block mb-1">Verification Status</span>
+                        <span class="font-bold text-amber-400 text-sm">HOLD • UNUPGRADED</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block mb-1">Sort Code</span>
+                        <span class="font-mono text-gray-300">20-••-•• (Masked)</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block mb-1">Account Number</span>
+                        <span class="font-mono text-gray-300">••••••3842 (Masked)</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2 border-t border-b border-white/10 py-4">
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Gross Incoming Settlement:</span>
+                        <span class="font-mono font-bold text-white text-sm">£89,999.54 GBP</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Standard Retail Tier Ceiling:</span>
+                        <span class="font-mono text-gray-300">£10,000.00 GBP</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Excess Fund Volume:</span>
+                        <span class="font-mono text-revolut-red font-bold">£79,999.54 GBP</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Required Upgrade Protocol:</span>
+                        <span class="font-bold text-revolut-accent">Tier 3 Institutional</span>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-white/5 text-gray-300 text-[11px] leading-relaxed">
+                    <p class="font-semibold text-white mb-1">Notice of Settlement Release:</p>
+                    Funds will automatically credit to account <code class="text-revolut-accent">••••••3842</code> immediately upon approval of the Tier 3 Account Elevation.
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-2">
+                <button 
+                    onclick="printSummaryDoc()"
+                    class="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all flex items-center justify-center gap-2"
+                >
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print Summary</span>
+                </button>
+                <button 
+                    onclick="closeSummaryModal(); openUpgradeModal();"
+                    class="flex-1 py-3 rounded-xl bg-revolut-accent text-black font-extrabold text-xs transition-all flex items-center justify-center gap-2"
+                >
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Proceed to Upgrade</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // --- Application State ---
+        const state = {
+            verificationCode: '66753',
+            isRevealed: false,
+            selectedTier: 'ultra',
+            targetName: 'JASVIR SINGH DHILLON',
+            amountGBP: 89999.54
+        };
+
+        // DOM Element Helpers
+        const getEl = (id) => document.getElementById(id);
+
+        // Handles submission of verification code
+        function handleVerificationSubmit(e) {
+            e.preventDefault();
+            const inputVal = getEl('verificationCode').value.trim();
+
+            if (!inputVal) {
+                showToast('Please enter a valid verification code.', 'error');
+                return;
+            }
+
+            // Switch to Loading View
+            switchView('loadingView');
+            runVerificationSequence(inputVal);
         }
-    });
 
-    // --- Initialization ---
-    updateUI();
-    renderWatchlist();
-</script>
+        // Simulated Step-by-Step Loading Sequence
+        function runVerificationSequence(code) {
+            const statusText = getEl('loadingStatusText');
+            const progressBar = getEl('loadingProgressBar');
+            const sessionText = getEl('sessionIdText');
+            
+            sessionText.innerText = `REV-${Math.floor(10000 + Math.random() * 90000)}-UK`;
+
+            // Step 1: Querying
+            progressBar.style.width = '30%';
+            statusText.innerText = 'Querying Revolut Enterprise Network...';
+
+            setTimeout(() => {
+                // Step 2: Validating Credentials
+                progressBar.style.width = '70%';
+                statusText.innerText = 'Validating Account Credentials & Deposit Record...';
+            }, 800);
+
+            setTimeout(() => {
+                // Step 3: Retrieving Details
+                progressBar.style.width = '100%';
+                statusText.innerText = 'Retrieving Transfer & Compliance Record...';
+            }, 1500);
+
+            setTimeout(() => {
+                // Transition to Dashboard View
+                switchView('dashboardView');
+                showToast(`Verification code #${code} successfully loaded.`, 'success');
+            }, 2200);
+        }
+
+        // View Switcher Utility
+        function switchView(viewId) {
+            getEl('checkStatusView').classList.add('hidden');
+            getEl('loadingView').classList.add('hidden');
+            getEl('dashboardView').classList.add('hidden');
+
+            getEl(viewId).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Toggle Masked Banking Credentials
+        function toggleBlurDetails() {
+            state.isRevealed = !state.isRevealed;
+            
+            const sortEl = getEl('sortCodeVal');
+            const accEl = getEl('accountNoVal');
+            const eyeIcon = getEl('eyeIcon');
+            const eyeText = getEl('eyeText');
+
+            if (state.isRevealed) {
+                sortEl.innerText = state.sortCode;
+                accEl.innerText = state.accountNo;
+                sortEl.classList.add('revealed');
+                accEl.classList.add('revealed');
+                eyeIcon.className = 'fa-solid fa-eye-slash text-[11px]';
+                eyeText.innerText = 'Hide';
+                showToast('Sensitive account details unmasked.', 'info');
+            } else {
+                sortEl.innerText = '20-••-••';
+                accEl.innerText = '••••••3842';
+                sortEl.classList.remove('revealed');
+                accEl.classList.remove('revealed');
+                eyeIcon.className = 'fa-solid fa-eye text-[11px]';
+                eyeText.innerText = 'Show';
+            }
+        }
+
+        // Reset flow back to initial check view
+        function resetToCodeCheck() {
+            getEl('verificationCode').value = '';
+            switchView('checkStatusView');
+            showToast('Returned to verification portal input.', 'info');
+        }
+
+        // Modals Management
+        function triggerUpgradeSequence() {
+            // Reset spinner & content state
+            getEl('upgradeModalSpinner').classList.remove('hidden');
+            getEl('upgradeModalContent').classList.add('hidden');
+            
+            openUpgradeModal();
+
+            // Simulate loading spinner before showing popup details
+            setTimeout(() => {
+                getEl('upgradeModalSpinner').classList.add('hidden');
+                getEl('upgradeModalContent').classList.remove('hidden');
+            }, 1200);
+        }
+
+        function openUpgradeModal() {
+            getEl('upgradeModal').classList.remove('hidden');
+            getEl('upgradeModal').classList.add('flex');
+        }
+
+        function closeUpgradeModal() {
+            getEl('upgradeModal').classList.add('hidden');
+            getEl('upgradeModal').classList.remove('flex');
+        }
+
+        function openSummaryModal() {
+            getEl('summaryModal').classList.remove('hidden');
+            getEl('summaryModal').classList.add('flex');
+        }
+
+        function closeSummaryModal() {
+            getEl('summaryModal').classList.add('hidden');
+            getEl('summaryModal').classList.remove('flex');
+        }
+
+        // Tier Selector logic inside modal
+        function selectTier(tier) {
+            state.selectedTier = tier;
+            const ultraBox = getEl('tierUltra');
+            const bizBox = getEl('tierBusiness');
+
+            if (tier === 'ultra') {
+                ultraBox.className = 'p-4 rounded-2xl border-2 border-revolut-accent bg-revolut-accent/10 cursor-pointer transition-all flex items-center justify-between';
+                bizBox.className = 'p-4 rounded-2xl border border-white/10 bg-revolut-card hover:border-white/20 cursor-pointer transition-all flex items-center justify-between';
+            } else {
+                bizBox.className = 'p-4 rounded-2xl border-2 border-revolut-accent bg-revolut-accent/10 cursor-pointer transition-all flex items-center justify-between';
+                ultraBox.className = 'p-4 rounded-2xl border border-white/10 bg-revolut-card hover:border-white/20 cursor-pointer transition-all flex items-center justify-between';
+            }
+        }
+
+        // Submit Upgrade Request
+        function submitUpgradeRequest() {
+            const btn = getEl('submitUpgradeBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Processing Request...`;
+
+            setTimeout(() => {
+                closeUpgradeModal();
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Submit Priority Upgrade Request</span>`;
+                
+                showToast('Upgrade request submitted to Priority Compliance Desk!', 'success');
+            }, 1800);
+        }
+
+        // Simulated Print
+        function printSummaryDoc() {
+            showToast('Preparing PDF document for printing...', 'info');
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
+
+        // Custom Toast System
+        function showToast(message, type = 'info') {
+            const container = getEl('toastContainer');
+            const toast = document.createElement('div');
+
+            let typeStyles = 'bg-revolut-card border-white/20 text-white';
+            let icon = 'fa-circle-info text-revolut-accent';
+
+            if (type === 'success') {
+                typeStyles = 'bg-revolut-card border-revolut-accent/50 text-white';
+                icon = 'fa-circle-check text-revolut-accent';
+            } else if (type === 'error') {
+                typeStyles = 'bg-revolut-card border-revolut-red/50 text-white';
+                icon = 'fa-circle-exclamation text-revolut-red';
+            }
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border glass-panel shadow-2xl text-xs font-semibold ${typeStyles} transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            // Animate In
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Animate Out & Remove
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revolut - High-Value Transfer Verification Portal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        revolut: {
+                            dark: '#08090d',
+                            card: '#12141f',
+                            cardLight: '#1a1d2d',
+                            accent: '#00e6a8',
+                            accentHover: '#00c48f',
+                            cyan: '#00d4b1',
+                            blue: '#1964ff',
+                            amber: '#ff9800',
+                            red: '#ff4d4d'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar and glassmorphism styling */
+        body {
+            background-color: #08090d;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 230, 168, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 90% 20%, rgba(25% 100 255 / 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .glass-panel {
+            background: rgba(18, 20, 31, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-panel-glow {
+            background: rgba(22, 25, 38, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 230, 168, 0.2);
+            box-shadow: 0 0 35px -5px rgba(0, 230, 168, 0.15);
+        }
+
+        .glow-mint {
+            box-shadow: 0 0 25px rgba(0, 230, 168, 0.35);
+        }
+
+        .text-gradient-mint {
+            background: linear-gradient(135deg, #ffffff 0%, #00e6a8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-gradient-amber {
+            background: linear-gradient(135deg, #ffe082 0%, #ff9800 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge-pill {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .pulse-slow {
+            animation: pulse 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .blur-sensitive {
+            filter: blur(6px);
+            user-select: none;
+            transition: filter 0.3s ease;
+        }
+
+        .blur-sensitive.revealed {
+            filter: blur(0);
+        }
+
+        /* Toast animation */
+        #toastContainer {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-gray-100 selection:bg-revolut-accent selection:text-black">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 w-full border-b border-white/10 glass-panel">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-revolut-accent to-revolut-cyan flex items-center justify-center font-extrabold text-black text-xl shadow-lg shadow-revolut-accent/20">
+                    R
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-lg tracking-wider text-white flex items-center gap-1.5">
+                        Revolut <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-revolut-accent font-medium border border-revolut-accent/20">VERIFY</span>
+                    </span>
+                    <span class="text-[10px] text-gray-400 font-medium tracking-widest uppercase">Secure Settlement Network</span>
+                </div>
+            </div>
+
+            <!-- Header Status Pill -->
+            <div class="hidden sm:flex items-center gap-2 badge-pill px-3.5 py-1.5 rounded-full text-xs font-medium text-gray-300">
+                <span class="w-2 h-2 rounded-full bg-revolut-accent animate-pulse"></span>
+                <span>Enterprise Node #667</span>
+                <span class="text-gray-500">|</span>
+                <span class="text-revolut-accent font-semibold"><i class="fa-solid fa-shield-halved mr-1"></i>256-Bit SSL</span>
+            </div>
+
+            <!-- Contact / Help Pill -->
+            <button onclick="showToast('Revolut Priority Compliance Line Connected.', 'info')" class="text-xs font-semibold px-4 py-2 rounded-full badge-pill hover:bg-white/10 transition-all flex items-center gap-2 text-gray-200">
+                <i class="fa-solid fa-headset text-revolut-accent"></i>
+                <span>Compliance Support</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col justify-center">
+
+        <!-- Top Announcement Tag -->
+        <div class="flex justify-center mb-6">
+            <div class="inline-flex items-center gap-2 badge-pill px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium text-gray-300 border border-white/15 shadow-inner">
+                <span class="w-2 h-2 rounded-full bg-revolut-accent"></span>
+                <span class="text-gray-400">Institutional Protocol:</span>
+                <span class="text-white font-semibold">Tier 3 Settlement Verification</span>
+            </div>
+        </div>
+
+        <!-- VIEW 1: CHECK STATUS INPUT VIEW -->
+        <section id="checkStatusView" class="transition-all duration-500 ease-in-out">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+                    Revolut High-Value Transfer <br class="hidden sm:inline"/>
+                    <span class="text-gradient-mint">Verification Portal</span>
+                </h1>
+                <p class="text-gray-400 text-sm sm:text-base leading-relaxed">
+                    Verify account tier compliance, secure limits, and pending incoming transfer status using your unique verification access key.
+                </p>
+            </div>
+
+            <!-- Glass Card Input Box -->
+            <div class="max-w-md mx-auto glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden shadow-2xl border border-white/10">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-revolut-accent/10 rounded-full filter blur-2xl pointer-events-none"></div>
+                
+                <form id="verifyForm" onsubmit="handleVerificationSubmit(event)" class="space-y-6 relative z-10">
+                    <div>
+                        <label for="verificationCode" class="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">
+                            Enter Verification Code
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="verificationCode" 
+                                maxlength="10"
+                                placeholder="Enter Verification Code" 
+                                value=""
+                                required
+                                class="w-full bg-revolut-dark/90 border border-white/15 focus:border-revolut-accent rounded-2xl px-5 py-4 text-xl font-mono text-center tracking-widest text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-revolut-accent/30 transition-all shadow-inner"
+                            >
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-2 text-center">
+                            <i class="fa-solid fa-circle-info mr-1"></i> Code provided in your priority SMS or email dispatch.
+                        </p>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        id="submitBtn"
+                        class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-revolut-accent to-revolut-cyan text-black font-extrabold text-base tracking-wide shadow-lg hover:shadow-revolut-accent/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 group"
+                    >
+                        <span>Check Verification Status</span>
+                        <i class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </form>
+
+                <!-- Feature checklist footer -->
+                <div class="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 gap-3 text-xs text-gray-400">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>Instant Settlement Lookup</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>FCA Regulated Standards</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>Tier Upgrade Eligibility</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-revolut-accent"></i>
+                        <span>Automated Security Lock</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: LOADING / SPINNER STATE VIEW -->
+        <section id="loadingView" class="hidden transition-all duration-500 ease-in-out">
+            <div class="max-w-md mx-auto glass-panel-glow p-10 rounded-3xl text-center space-y-6 relative">
+                <!-- Spinner animation -->
+                <div class="relative w-24 h-24 mx-auto my-4 flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent/20"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent border-t-transparent animate-spin"></div>
+                    <div class="w-12 h-12 rounded-2xl bg-revolut-card flex items-center justify-center text-revolut-accent text-xl">
+                        <i class="fa-solid fa-shield-halved animate-pulse"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-2">Verifying Network Record</h3>
+                    <p id="loadingStatusText" class="text-sm text-revolut-accent font-medium h-6 transition-all duration-300">
+                        Querying Revolut Network...
+                    </p>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                    <div id="loadingProgressBar" class="bg-gradient-to-r from-revolut-accent to-revolut-cyan h-full w-0 transition-all duration-500"></div>
+                </div>
+
+                <div class="text-[12px] text-gray-500 font-mono">
+                    SESSION ID: <span id="sessionIdText" class="text-gray-400">REV-88942-UK</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: ACCOUNT DASHBOARD VIEW -->
+        <section id="dashboardView" class="hidden transition-all duration-500 ease-in-out space-y-6">
+            
+            <!-- Profile Overview Header Card -->
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 relative overflow-hidden">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    
+                    <!-- User details -->
+                    <div class="flex items-start sm:items-center gap-4">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-gray-800 to-revolut-cardLight border border-white/15 flex items-center justify-center text-white text-2xl font-black shadow-inner flex-shrink-0">
+                            JD
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-[11px] font-semibold text-gray-300 tracking-wide uppercase">
+                                    Target Beneficiary
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[11px] font-semibold border border-amber-500/20">
+                                    Verification Pending
+                                </span>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                                JASVIR SINGH DHILLON
+                            </h2>
+                            <p class="text-xs sm:text-sm text-gray-400 mt-1 flex items-center gap-2">
+                                <span>Revolut Retail Account</span>
+                                <span>•</span>
+                                <span class="text-gray-300">Region: United Kingdom (GBP)</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Masked Banking Credentials Box -->
+                    <div class="bg-revolut-dark/80 p-4 sm:p-5 rounded-2xl border border-white/10 space-y-2.5 min-w-[260px]">
+                        <div class="flex justify-between items-center text-xs text-gray-400">
+                            <span>Account Details</span>
+                            <button onclick="toggleBlurDetails()" class="text-revolut-accent hover:underline flex items-center gap-1 font-semibold">
+                                <i id="eyeIcon" class="fa-solid fa-eye text-[11px]"></i>
+                                <span id="eyeText">Show</span>
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-mono pt-1">
+                            <span class="text-gray-400 text-xs">Sort Code:</span>
+                            <span id="sortCodeVal" class="font-bold text-white tracking-widest blur-sensitive">20-••-••</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm font-mono pt-1 border-t border-white/5">
+                            <span class="text-gray-400 text-xs">Account No:</span>
+                            <span id="accountNoVal" class="font-bold text-white tracking-widest blur-sensitive">••••••3842</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Transfer Highlight Card -->
+            <div class="glass-panel-glow p-6 sm:p-10 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-revolut-accent/10 rounded-full filter blur-3xl pointer-events-none"></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <!-- Left: Transfer Info -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></div>
+                            <span class="text-xs font-bold uppercase tracking-widest text-amber-400">
+                                Incoming Transfer On Hold
+                            </span>
+                        </div>
+
+                        <div>
+                            <span class="text-xs sm:text-sm text-gray-400 font-medium block mb-1">
+                                Total Pending Settlement Amount
+                            </span>
+                            <div class="text-4xl sm:text-6xl font-black text-gradient-mint tracking-tight font-mono">
+                                £89,999.54 <span class="text-2xl sm:text-3xl text-revolut-accent font-sans">GBP</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Pill Badge -->
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-xs sm:text-sm shadow-inner">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>
+                            <span>STATUS: NOT UPGRADED • PENDING</span>
+                        </div>
+
+                        <p class="text-xs sm:text-sm text-gray-300 leading-relaxed pt-2">
+                            This high-value transfer of <strong class="text-white font-semibold">£89,999.54 GBP</strong> is safely held in Revolut's central settlement vault under reference <code class="text-revolut-accent bg-white/10 px-1.5 py-0.5 rounded font-mono">REV-66753-IN</code>.
+                        </p>
+                    </div>
+
+                    <!-- Right: Limit Gauge / Threshold Notice -->
+                    <div class="lg:col-span-5 bg-revolut-card/90 p-5 sm:p-6 rounded-2xl border border-white/10 space-y-4">
+                        <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center justify-between">
+                            <span>Account Limit Bar</span>
+                            <span class="text-revolut-amber text-[11px]"><i class="fa-solid fa-lock mr-1"></i>Limit Exceeded</span>
+                        </h4>
+
+                        <!-- Visual Progress Bar -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-gray-400">Standard Tier Limit:</span>
+                                <span class="text-gray-300 font-mono">£10,000.00</span>
+                            </div>
+                            <div class="w-full bg-white/10 h-3 rounded-full overflow-hidden p-0.5 border border-white/10">
+                                <div class="bg-gradient-to-r from-revolut-accent via-amber-400 to-revolut-red h-full w-full rounded-full"></div>
+                            </div>
+                            <div class="flex justify-between text-[11px] font-mono">
+                                <span class="text-revolut-accent">Incoming: £89,999.54</span>
+                                <span class="text-revolut-red font-bold">+£79,999.54 Over Limit</span>
+                            </div>
+                        </div>
+
+                        <!-- Notice Text -->
+                        <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 text-xs leading-relaxed">
+                            <i class="fa-solid fa-circle-info text-amber-400 mr-1.5"></i>
+                            According to Financial Conduct Regulations, incoming deposits exceeding <strong>£10,000.00</strong> require a <strong>Tier 3 Priority Account Upgrade</strong> before settlement release.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Breakdown Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-1">
+                    <span class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Transfer Protocol</span>
+                    <p class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-revolut-accent"></i>
+                        FPS / CHAPS Institutional
+                    </p>
+                    <p class="text-xs text-gray-500 pt-1">Direct Bank Settlement</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-1">
+                    <span class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Regulatory Compliance</span>
+                    <p class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-shield-cat text-revolut-cyan"></i>
+                        AML / Tier 3 Hold
+                    </p>
+                    <p class="text-xs text-gray-500 pt-1">Verification Code #66753</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-1">
+                    <span class="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Estimated Release</span>
+                    <p class="text-sm font-bold text-revolut-accent flex items-center gap-2">
+                        <i class="fa-solid fa-clock"></i>
+                        Immediate Upon Upgrade
+                    </p>
+                    <p class="text-xs text-gray-500 pt-1">Automated Instant Release</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons Grid -->
+            <div class="glass-panel p-6 rounded-3xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="text-center sm:text-left">
+                    <h4 class="text-base font-bold text-white">Required Action</h4>
+                    <p class="text-xs text-gray-400">Select an action below to proceed with verification or documentation.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onclick="triggerUpgradeSequence()"
+                        class="flex-1 sm:flex-initial py-3.5 px-6 rounded-2xl bg-gradient-to-r from-revolut-accent to-revolut-cyan text-black font-extrabold text-sm tracking-wide shadow-lg hover:shadow-revolut-accent/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Upgrade Now</span>
+                    </button>
+
+                    <button 
+                        onclick="openSummaryModal()"
+                        class="flex-1 sm:flex-initial py-3.5 px-5 rounded-2xl badge-pill hover:bg-white/15 text-white font-bold text-sm transition-all flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-file-invoice text-revolut-accent"></i>
+                        <span>Transfer Summary</span>
+                    </button>
+
+                    <button 
+                        onclick="resetToCodeCheck()"
+                        class="py-3.5 px-4 rounded-2xl badge-pill hover:bg-white/15 text-gray-400 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-1.5"
+                        title="Check another verification code"
+                    >
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span class="sm:hidden">Reset</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 glass-panel py-6 text-center text-xs text-gray-500 mt-12">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-md bg-revolut-accent text-black font-black text-xs flex items-center justify-center">R</div>
+                <span class="text-gray-400 font-semibold">Revolut Ltd © 2026</span>
+                <span>•</span>
+                <span>Authorised EMI (Ref: 900876)</span>
+            </div>
+            <div class="flex gap-4 text-gray-400">
+                <a href="javascript:void(0)" onclick="showToast('Regulatory Compliance Policy active.', 'info')" class="hover:underline">Security Policy</a>
+                <a href="javascript:void(0)" onclick="showToast('Verification Protocol v4.8 Active.', 'info')" class="hover:underline">Verification Terms</a>
+                <a href="javascript:void(0)" onclick="showToast('Encryption key: 256-BIT-SHA', 'info')" class="hover:underline">Encryption Node</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: UPGRADE REQUEST MODAL -->
+    <div id="upgradeModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 transition-all duration-300">
+        <div class="glass-panel-glow max-w-lg w-full rounded-3xl p-6 sm:p-8 space-y-6 relative border border-revolut-accent/30 overflow-hidden max-h-[90vh] overflow-y-auto">
+            
+            <!-- Close Button -->
+            <button onclick="closeUpgradeModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Spinner State inside Modal -->
+            <div id="upgradeModalSpinner" class="py-12 text-center space-y-4">
+                <div class="relative w-16 h-16 mx-auto flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent/20"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-revolut-accent border-t-transparent animate-spin"></div>
+                </div>
+                <h4 class="text-lg font-bold text-white">Initializing Upgrade Sequence...</h4>
+                <p class="text-xs text-gray-400">Configuring instant settlement profile parameters</p>
+            </div>
+
+            <!-- Modal Content (hidden during spinner) -->
+            <div id="upgradeModalContent" class="hidden space-y-6">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-revolut-accent/15 border border-revolut-accent/30 text-revolut-accent text-xs font-bold">
+                        <i class="fa-solid fa-shield-halved"></i> Tier Upgrade Specifications
+                    </div>
+                    <h3 class="text-2xl font-black text-white">Upgrade Profile Details</h3>
+                </div>
+
+                <!-- Specified Details Box -->
+                <div class="p-5 rounded-2xl bg-revolut-dark border border-white/10 space-y-3 font-mono text-sm">
+                    <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                        <span class="text-gray-400 font-sans text-xs">DAD:</span>
+                        <span class="font-bold text-white tracking-widest">0000</span>
+                    </div>
+                    <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                        <span class="text-gray-400 font-sans text-xs">Months:</span>
+                        <span class="font-bold text-white tracking-widest">0000</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 font-sans text-xs">Recipes:</span>
+                        <span class="font-bold text-revolut-accent uppercase tracking-wider">Instant</span>
+                    </div>
+                </div>
+
+                <!-- Confirmation Action Button -->
+                <button 
+                    onclick="closeUpgradeModal()"
+                    class="w-full py-4 rounded-2xl bg-gradient-to-r from-revolut-accent to-revolut-cyan text-black font-extrabold text-base tracking-wide shadow-lg hover:shadow-revolut-accent/30 transition-all flex items-center justify-center gap-2"
+                >
+                    <i class="fa-solid fa-check"></i>
+                    <span>Confirm & Close</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL 2: TRANSFER SUMMARY MODAL -->
+    <div id="summaryModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 transition-all duration-300">
+        <div class="glass-panel max-w-xl w-full rounded-3xl p-6 sm:p-8 space-y-6 relative border border-white/20 max-h-[90vh] overflow-y-auto">
+            
+            <!-- Close Button -->
+            <button onclick="closeSummaryModal()" class="absolute top-5 right-5 text-gray-400 hover:text-white w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Statement Header -->
+            <div class="border-b border-white/10 pb-5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-revolut-accent text-black font-extrabold flex items-center justify-center text-xl">
+                        R
+                    </div>
+                    <div>
+                        <h4 class="font-extrabold text-white text-lg">Transfer Release Summary</h4>
+                        <p class="text-xs text-gray-400">Official Settlement Hold Document</p>
+                    </div>
+                </div>
+                <div class="text-right font-mono text-[11px] text-gray-400">
+                    <div>DOC-ID: #88942-REV</div>
+                    <div class="text-revolut-accent">CONFIDENTIAL</div>
+                </div>
+            </div>
+
+            <!-- Printable Body -->
+            <div class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-4 bg-revolut-dark p-4 rounded-2xl border border-white/10">
+                    <div>
+                        <span class="text-gray-500 block mb-1">Beneficiary Name</span>
+                        <span class="font-bold text-white text-sm">JASVIR SINGH DHILLON</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block mb-1">Verification Status</span>
+                        <span class="font-bold text-amber-400 text-sm">HOLD • UNUPGRADED</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block mb-1">Sort Code</span>
+                        <span class="font-mono text-gray-300">20-••-•• (Masked)</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block mb-1">Account Number</span>
+                        <span class="font-mono text-gray-300">••••••3842 (Masked)</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2 border-t border-b border-white/10 py-4">
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Gross Incoming Settlement:</span>
+                        <span class="font-mono font-bold text-white text-sm">£89,999.54 GBP</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Standard Retail Tier Ceiling:</span>
+                        <span class="font-mono text-gray-300">£10,000.00 GBP</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Excess Fund Volume:</span>
+                        <span class="font-mono text-revolut-red font-bold">£79,999.54 GBP</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-gray-400">Required Upgrade Protocol:</span>
+                        <span class="font-bold text-revolut-accent">Tier 3 Institutional</span>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-white/5 text-gray-300 text-[11px] leading-relaxed">
+                    <p class="font-semibold text-white mb-1">Notice of Settlement Release:</p>
+                    Funds will automatically credit to account <code class="text-revolut-accent">••••••3842</code> immediately upon approval of the Tier 3 Account Elevation.
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-2">
+                <button 
+                    onclick="printSummaryDoc()"
+                    class="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all flex items-center justify-center gap-2"
+                >
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print Summary</span>
+                </button>
+                <button 
+                    onclick="closeSummaryModal(); openUpgradeModal();"
+                    class="flex-1 py-3 rounded-xl bg-revolut-accent text-black font-extrabold text-xs transition-all flex items-center justify-center gap-2"
+                >
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Proceed to Upgrade</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // --- Application State ---
+        const state = {
+            verificationCode: '66753',
+            isRevealed: false,
+            selectedTier: 'ultra',
+            targetName: 'JASVIR SINGH DHILLON',
+            sortCode: '20-48-92',
+            accountNo: '88393842',
+            amountGBP: 89999.54
+        };
+
+        // DOM Element Helpers
+        const getEl = (id) => document.getElementById(id);
+
+        // Handles submission of verification code
+        function handleVerificationSubmit(e) {
+            e.preventDefault();
+            const inputVal = getEl('verificationCode').value.trim();
+
+            if (!inputVal) {
+                showToast('Please enter a valid verification code.', 'error');
+                return;
+            }
+
+            // Switch to Loading View
+            switchView('loadingView');
+            runVerificationSequence(inputVal);
+        }
+
+        // Simulated Step-by-Step Loading Sequence
+        function runVerificationSequence(code) {
+            const statusText = getEl('loadingStatusText');
+            const progressBar = getEl('loadingProgressBar');
+            const sessionText = getEl('sessionIdText');
+            
+            sessionText.innerText = `REV-${Math.floor(10000 + Math.random() * 90000)}-UK`;
+
+            // Step 1: Querying
+            progressBar.style.width = '30%';
+            statusText.innerText = 'Querying Revolut Enterprise Network...';
+
+            setTimeout(() => {
+                // Step 2: Validating Credentials
+                progressBar.style.width = '70%';
+                statusText.innerText = 'Validating Account Credentials & Deposit Record...';
+            }, 800);
+
+            setTimeout(() => {
+                // Step 3: Retrieving Details
+                progressBar.style.width = '100%';
+                statusText.innerText = 'Retrieving Transfer & Compliance Record...';
+            }, 1500);
+
+            setTimeout(() => {
+                // Transition to Dashboard View
+                switchView('dashboardView');
+                showToast(`Verification code #${code} successfully loaded.`, 'success');
+            }, 2200);
+        }
+
+        // View Switcher Utility
+        function switchView(viewId) {
+            getEl('checkStatusView').classList.add('hidden');
+            getEl('loadingView').classList.add('hidden');
+            getEl('dashboardView').classList.add('hidden');
+
+            getEl(viewId).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Toggle Masked Banking Credentials
+        function toggleBlurDetails() {
+            state.isRevealed = !state.isRevealed;
+            
+            const sortEl = getEl('sortCodeVal');
+            const accEl = getEl('accountNoVal');
+            const eyeIcon = getEl('eyeIcon');
+            const eyeText = getEl('eyeText');
+
+            if (state.isRevealed) {
+                sortEl.innerText = state.sortCode;
+                accEl.innerText = state.accountNo;
+                sortEl.classList.add('revealed');
+                accEl.classList.add('revealed');
+                eyeIcon.className = 'fa-solid fa-eye-slash text-[11px]';
+                eyeText.innerText = 'Hide';
+                showToast('Sensitive account details unmasked.', 'info');
+            } else {
+                sortEl.innerText = '20-••-••';
+                accEl.innerText = '••••••3842';
+                sortEl.classList.remove('revealed');
+                accEl.classList.remove('revealed');
+                eyeIcon.className = 'fa-solid fa-eye text-[11px]';
+                eyeText.innerText = 'Show';
+            }
+        }
+
+        // Reset flow back to initial check view
+        function resetToCodeCheck() {
+            getEl('verificationCode').value = '';
+            switchView('checkStatusView');
+            showToast('Returned to verification portal input.', 'info');
+        }
+
+        // Modals Management
+        function triggerUpgradeSequence() {
+            // Reset spinner & content state
+            getEl('upgradeModalSpinner').classList.remove('hidden');
+            getEl('upgradeModalContent').classList.add('hidden');
+            
+            openUpgradeModal();
+
+            // Simulate loading spinner before showing popup details
+            setTimeout(() => {
+                getEl('upgradeModalSpinner').classList.add('hidden');
+                getEl('upgradeModalContent').classList.remove('hidden');
+            }, 1200);
+        }
+
+        function openUpgradeModal() {
+            getEl('upgradeModal').classList.remove('hidden');
+            getEl('upgradeModal').classList.add('flex');
+        }
+
+        function closeUpgradeModal() {
+            getEl('upgradeModal').classList.add('hidden');
+            getEl('upgradeModal').classList.remove('flex');
+        }
+
+        function openSummaryModal() {
+            getEl('summaryModal').classList.remove('hidden');
+            getEl('summaryModal').classList.add('flex');
+        }
+
+        function closeSummaryModal() {
+            getEl('summaryModal').classList.add('hidden');
+            getEl('summaryModal').classList.remove('flex');
+        }
+
+        // Tier Selector logic inside modal
+        function selectTier(tier) {
+            state.selectedTier = tier;
+            const ultraBox = getEl('tierUltra');
+            const bizBox = getEl('tierBusiness');
+
+            if (tier === 'ultra') {
+                ultraBox.className = 'p-4 rounded-2xl border-2 border-revolut-accent bg-revolut-accent/10 cursor-pointer transition-all flex items-center justify-between';
+                bizBox.className = 'p-4 rounded-2xl border border-white/10 bg-revolut-card hover:border-white/20 cursor-pointer transition-all flex items-center justify-between';
+            } else {
+                bizBox.className = 'p-4 rounded-2xl border-2 border-revolut-accent bg-revolut-accent/10 cursor-pointer transition-all flex items-center justify-between';
+                ultraBox.className = 'p-4 rounded-2xl border border-white/10 bg-revolut-card hover:border-white/20 cursor-pointer transition-all flex items-center justify-between';
+            }
+        }
+
+        // Submit Upgrade Request
+        function submitUpgradeRequest() {
+            const btn = getEl('submitUpgradeBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Processing Request...`;
+
+            setTimeout(() => {
+                closeUpgradeModal();
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Submit Priority Upgrade Request</span>`;
+                
+                showToast('Upgrade request submitted to Priority Compliance Desk!', 'success');
+            }, 1800);
+        }
+
+        // Simulated Print
+        function printSummaryDoc() {
+            showToast('Preparing PDF document for printing...', 'info');
+            setTimeout(() => {
+                window.print();
+            }, 500);
+        }
+
+        // Custom Toast System
+        function showToast(message, type = 'info') {
+            const container = getEl('toastContainer');
+            const toast = document.createElement('div');
+
+            let typeStyles = 'bg-revolut-card border-white/20 text-white';
+            let icon = 'fa-circle-info text-revolut-accent';
+
+            if (type === 'success') {
+                typeStyles = 'bg-revolut-card border-revolut-accent/50 text-white';
+                icon = 'fa-circle-check text-revolut-accent';
+            } else if (type === 'error') {
+                typeStyles = 'bg-revolut-card border-revolut-red/50 text-white';
+                icon = 'fa-circle-exclamation text-revolut-red';
+            }
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border glass-panel shadow-2xl text-xs font-semibold ${typeStyles} transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            // Animate In
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Animate Out & Remove
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
